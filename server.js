@@ -16,20 +16,29 @@ app.use(express.static('public'));
 const db = new sqlite3.Database('./data.db');
 
 db.serialize(() => {
+  // 1. Profile Table
   db.run(`
     CREATE TABLE IF NOT EXISTS profile (
       id INTEGER PRIMARY KEY,
-      name TEXT,
-      streak INTEGER DEFAULT 5,
-      xp INTEGER DEFAULT 350,
-      xp_max INTEGER DEFAULT 500,
-      level TEXT DEFAULT 'Level 3 Warrior',
-      co2_kg INTEGER DEFAULT 42,
-      water_l TEXT DEFAULT '1.2k',
-      waste_kg INTEGER DEFAULT 15
+      name TEXT DEFAULT 'Nikhil',
+      streak INTEGER DEFAULT 0,
+      xp INTEGER DEFAULT 0,
+      xp_max INTEGER DEFAULT 100,
+      level TEXT DEFAULT 'Level 1 - 🌱 Eco Rookie',
+      co2_kg INTEGER DEFAULT 0,
+      water_l TEXT DEFAULT '0',
+      waste_kg INTEGER DEFAULT 0,
+      last_active_date TEXT DEFAULT ''
     )
   `);
 
+  // Safe initial seed for user
+  db.run(`
+    INSERT OR IGNORE INTO profile (id, name, streak, xp, xp_max, level, co2_kg, water_l, waste_kg, last_active_date) 
+    VALUES (1, 'Nikhil', 0, 0, 100, 'Level 1 - 🌱 Eco Rookie', 0, '0', 0, '')
+  `);
+
+  // 2. Quests Table
   db.run(`
     CREATE TABLE IF NOT EXISTS quests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,6 +48,12 @@ db.serialize(() => {
     )
   `);
 
+  // Safe seed for initial quests
+  db.run(`INSERT OR IGNORE INTO quests (id, title, xp_reward, completed) VALUES (1, 'Brought a Reusable Bag', 15, 0)`);
+  db.run(`INSERT OR IGNORE INTO quests (id, title, xp_reward, completed) VALUES (2, 'Zero Leftover Meal', 20, 0)`);
+  db.run(`INSERT OR IGNORE INTO quests (id, title, xp_reward, completed) VALUES (3, 'Walk / Cycle Short Trips', 25, 0)`);
+
+  // 3. Reports Table
   db.run(`
     CREATE TABLE IF NOT EXISTS reports (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,20 +64,6 @@ db.serialize(() => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
-
-  db.get('SELECT COUNT(*) as count FROM profile', (err, row) => {
-    if (row && row.count === 0) {
-      db.run('INSERT INTO profile (id, name) VALUES (1, "Nikhil")');
-    }
-  });
-
-  db.get('SELECT COUNT(*) as count FROM quests', (err, row) => {
-    if (row && row.count === 0) {
-      db.run('INSERT INTO quests (title, xp_reward) VALUES ("Used a reusable bag", 10)');
-      db.run('INSERT INTO quests (title, xp_reward) VALUES ("Plant-based meal today", 15)');
-      db.run('INSERT INTO quests (title, xp_reward) VALUES ("Turned off AC for 2 hours", 10)');
-    }
-  });
 });
 
 app.get('/api/dashboard', (req, res) => {
@@ -75,17 +76,51 @@ app.get('/api/dashboard', (req, res) => {
   });
 });
 
+// Claim Quest, Increase XP & Manage Daily Streak
 app.post('/api/quests/toggle', (req, res) => {
   const { questId, completed } = req.body;
   const isDone = completed ? 1 : 0;
 
   db.get('SELECT xp_reward FROM quests WHERE id = ?', [questId], (err, quest) => {
-    if (!quest) return res.status(404).json({ error: 'Quest not found' });
-    db.run('UPDATE quests SET completed = ? WHERE id = ?', [isDone, questId], () => {
-      const xpChange = isDone ? quest.xp_reward : -quest.xp_reward;
-      db.run('UPDATE profile SET xp = xp + ? WHERE id = 1', [xpChange], () => {
-        res.json({ success: true });
-      });
+    if (err) return res.status(500).json({ error: err.message });
+    const xpReward = quest ? quest.xp_reward : (parseInt(req.body.xp, 10) || 15);
+
+    db.get('SELECT xp, streak, last_active_date FROM profile WHERE id = 1', (err, profile) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      let newStreak = profile?.streak || 0;
+
+      if (isDone) {
+        if (!profile?.last_active_date) {
+          newStreak = 1;
+        } else {
+          const lastDate = new Date(profile.last_active_date);
+          const today = new Date(todayStr);
+          const diffDays = Math.round((today - lastDate) / (1000 * 60 * 60 * 24));
+
+          if (diffDays === 1) {
+            newStreak += 1;
+          } else if (diffDays > 1) {
+            newStreak = 1;
+          }
+        }
+      }
+
+      const xpChange = isDone ? xpReward : -xpReward;
+
+      db.run(
+        'UPDATE profile SET xp = MAX(0, xp + ?), streak = ?, last_active_date = ? WHERE id = 1',
+        [xpChange, newStreak, todayStr],
+        function(updateErr) {
+          if (updateErr) return res.status(500).json({ error: updateErr.message });
+          
+          db.get('SELECT * FROM profile WHERE id = 1', (fetchErr, updatedUser) => {
+            if (fetchErr) return res.status(500).json({ error: fetchErr.message });
+            res.json({ success: true, user: updatedUser });
+          });
+        }
+      );
     });
   });
 });
@@ -336,6 +371,76 @@ app.post('/api/profile/quest', (req, res) => {
   });
 });
 
+// Update / Create Profile
+app.post('/api/profile/update', (req, res) => {
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: 'Name is required' });
+
+  db.run(
+    'UPDATE profile SET name = ? WHERE id = 1',
+    [name.trim()],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, name: name.trim() });
+    }
+  );
+});
+// Database seed for community leaderboard if table doesn't exist
+db.serialize(() => {
+  db.run(`CREATE TABLE IF NOT EXISTS leaderboard (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    xp INTEGER,
+    streak INTEGER,
+    avatar TEXT
+  )`);
+
+  // Insert mock competitors if empty
+  db.get("SELECT COUNT(*) as count FROM leaderboard", (err, row) => {
+    if (row && row.count === 0) {
+      db.run("INSERT INTO leaderboard (name, xp, streak, avatar) VALUES ('Aarav Sharma', 620, 12, 'A')");
+      db.run("INSERT INTO leaderboard (name, xp, streak, avatar) VALUES ('Priya Patel', 410, 8, 'P')");
+      db.run("INSERT INTO leaderboard (name, xp, streak, avatar) VALUES ('Rohan Verma', 280, 4, 'R')");
+      db.run("INSERT INTO leaderboard (name, xp, streak, avatar) VALUES ('Ananya Iyer', 190, 3, 'A')");
+    }
+  });
+});
+
+// Get Live Community Leaderboard (Including You)
+app.get('/api/leaderboard', (req, res) => {
+  db.get('SELECT name, xp, streak_days FROM profile WHERE id = 1', (err, user) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    db.all('SELECT name, xp, streak, avatar FROM leaderboard', (err, competitors) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const allUsers = [
+        ...competitors,
+        { name: user.name + ' (You)', xp: user.xp, streak: user.streak_days, isCurrent: true, avatar: user.name.charAt(0).toUpperCase() }
+      ];
+
+      // Sort by highest XP descending
+      allUsers.sort((a, b) => b.xp - a.xp);
+
+      res.json(allUsers);
+    });
+  });
+});
+
+// Complete any Quest with Custom XP & Streak addition
+app.post('/api/profile/quest', (req, res) => {
+  const xpReward = parseInt(req.body.xp) || 15;
+  db.run(
+    'UPDATE profile SET xp = xp + ?, streak_days = streak_days + 1 WHERE id = 1',
+    [xpReward],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      db.get('SELECT * FROM profile WHERE id = 1', (err, row) => {
+        res.json({ success: true, user: row, addedXp: xpReward });
+      });
+    }
+  );
+});
 app.listen(PORT, () => {
   console.log(`EcoPulse Server running on port ${PORT}`);
 });
