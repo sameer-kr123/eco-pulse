@@ -1,12 +1,14 @@
 require('dotenv').config();
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
-const { GoogleGenAI } = require('@google/genai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
-const MODEL_NAME = 'gemini-3.6-flash';
+
+// Initialize Gemini Client
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 app.use(express.json({ limit: '15mb' }));
 app.use(express.static('public'));
@@ -14,7 +16,6 @@ app.use(express.static('public'));
 const db = new sqlite3.Database('./data.db');
 
 db.serialize(() => {
-  // Profile Table
   db.run(`
     CREATE TABLE IF NOT EXISTS profile (
       id INTEGER PRIMARY KEY,
@@ -29,7 +30,6 @@ db.serialize(() => {
     )
   `);
 
-  // Quests Table
   db.run(`
     CREATE TABLE IF NOT EXISTS quests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,7 +39,6 @@ db.serialize(() => {
     )
   `);
 
-  // Waste Reports Table (New)
   db.run(`
     CREATE TABLE IF NOT EXISTS reports (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,7 +50,6 @@ db.serialize(() => {
     )
   `);
 
-  // Seed default data
   db.get('SELECT COUNT(*) as count FROM profile', (err, row) => {
     if (row && row.count === 0) {
       db.run('INSERT INTO profile (id, name) VALUES (1, "Nikhil")');
@@ -67,7 +65,6 @@ db.serialize(() => {
   });
 });
 
-// Dashboard Data
 app.get('/api/dashboard', (req, res) => {
   db.get('SELECT * FROM profile WHERE id = 1', (err, user) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -78,7 +75,6 @@ app.get('/api/dashboard', (req, res) => {
   });
 });
 
-// Toggle Quest XP
 app.post('/api/quests/toggle', (req, res) => {
   const { questId, completed } = req.body;
   const isDone = completed ? 1 : 0;
@@ -94,7 +90,6 @@ app.post('/api/quests/toggle', (req, res) => {
   });
 });
 
-// Get All Saved Map Reports
 app.get('/api/reports', (req, res) => {
   db.all('SELECT * FROM reports ORDER BY id DESC', (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -102,18 +97,14 @@ app.get('/api/reports', (req, res) => {
   });
 });
 
-// Save New Waste Report to DB
 app.post('/api/reports', (req, res) => {
   const { lat, lng, location, description } = req.body;
   if (!lat || !lng || !description) {
     return res.status(400).json({ error: 'Missing coordinates or description.' });
   }
 
-  const sql = 'INSERT INTO reports (lat, lng, location, description) VALUES (?, ?, ?, ?)';
-  db.run(sql, [lat, lng, location, description], function (err) {
+  db.run('INSERT INTO reports (lat, lng, location, description) VALUES (?, ?, ?, ?)', [lat, lng, location, description], function (err) {
     if (err) return res.status(500).json({ error: err.message });
-
-    // Reward user +30 XP for reporting
     db.run('UPDATE profile SET xp = xp + 30 WHERE id = 1');
     res.json({ id: this.lastID, success: true });
   });
@@ -125,20 +116,19 @@ app.post('/api/ai/scan-waste', async (req, res) => {
     const { imageBase64 } = req.body;
     if (!imageBase64) return res.status(400).json({ error: 'No image provided' });
 
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: [
-        {
-          parts: [
-            { text: "Analyze this item in 3 short bullet points: 1. Material name 2. Is it recyclable? (Yes/No) 3. Exactly how to dispose/recycle it. Keep it concise." },
-            { inlineData: { mimeType: 'image/jpeg', data: imageBase64 } }
-          ]
-        }
-      ]
-    });
+    const prompt = "Analyze this item in 3 short bullet points: 1. Material name 2. Is it recyclable? (Yes/No) 3. Exactly how to dispose/recycle it. Keep it concise.";
+    const imagePart = {
+      inlineData: {
+        data: imageBase64,
+        mimeType: "image/jpeg"
+      }
+    };
+
+    const result = await model.generateContent([prompt, imagePart]);
+    const response = await result.response;
 
     db.run('UPDATE profile SET xp = xp + 25, waste_kg = waste_kg + 1 WHERE id = 1');
-    res.json({ result: response.text });
+    res.json({ result: response.text() });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -149,27 +139,31 @@ app.post('/api/ai/food-rescue', async (req, res) => {
   try {
     const { ingredients, imageBase64 } = req.body;
     let parts = [];
+
     if (imageBase64) {
-      parts.push({ text: "Look at this food image, identify visible ingredients, and generate 1 zero-waste recipe with: 1. Recipe Name 2. Cooking Time 3. 3-step Instructions." });
-      parts.push({ inlineData: { mimeType: 'image/jpeg', data: imageBase64 } });
+      parts.push("Look at this food image, identify visible ingredients, and generate 1 zero-waste recipe with: 1. Recipe Name 2. Cooking Time 3. 3-step Instructions.");
+      parts.push({
+        inlineData: {
+          data: imageBase64,
+          mimeType: "image/jpeg"
+        }
+      });
     } else if (ingredients) {
-      parts.push({ text: `I have these leftover ingredients: "${ingredients}". Suggest 1 quick, zero-waste recipe with: Recipe Name, Cooking Time, and 3 Simple Steps.` });
+      parts.push(`I have these leftover ingredients: "${ingredients}". Suggest 1 quick, zero-waste recipe with: Recipe Name, Cooking Time, and 3 Simple Steps.`);
     } else {
       return res.status(400).json({ error: 'Please enter ingredients or scan an image of food.' });
     }
 
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: [{ parts }]
-    });
+    const result = await model.generateContent(parts);
+    const response = await result.response;
 
     db.run('UPDATE profile SET xp = xp + 15 WHERE id = 1');
-    res.json({ recipe: response.text });
+    res.json({ recipe: response.text() });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`EcoPulse Server running at http://localhost:${PORT}`);
+  console.log(`EcoPulse Server running on port ${PORT}`);
 });

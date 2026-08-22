@@ -1,5 +1,5 @@
 {
-  "name": "my-backend",
+  "name": "eco-pulse",
   "version": "1.0.0",
   "description": "AI Sustainability Companion",
   "main": "server.js",
@@ -7,11 +7,10 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "start": "node server.js",
-    "build": "npm rebuild sqlite3"
+    "start": "node server.js"
   },
   "dependencies": {
-    "@google/genai": "^0.1.1",
+    "@google/generative-ai": "^0.24.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "sqlite3": "^5.1.7"
