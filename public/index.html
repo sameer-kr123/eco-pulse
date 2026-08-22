@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoPulse - AI Sustainability Studio</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+
+  <style>
+    :root {
+      --bg-base: #090d16;
+      --bg-surface: #111827;
+      --bg-card: #1f293d;
+      --border-subtle: #2d3b55;
+      --accent-emerald: #10b981;
+      --accent-teal: #06b6d4;
+      --accent-amber: #f59e0b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg-base); color: var(--text-main); min-height: 100vh; display: flex; }
+
+    .sidebar { width: 270px; background: var(--bg-surface); border-right: 1px solid var(--border-subtle); padding: 32px 20px; display: flex; flex-direction: column; justify-content: space-between; }
+    .brand { font-size: 20px; font-weight: 800; color: var(--accent-emerald); display: flex; align-items: center; gap: 10px; }
+    .brand-icon { background: rgba(16, 185, 129, 0.15); padding: 8px; border-radius: 10px; }
+    .nav-links { list-style: none; margin-top: 35px; }
+    .nav-item { padding: 12px 16px; border-radius: 12px; margin-bottom: 8px; color: var(--text-muted); font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s; font-size: 14px; }
+    .nav-item:hover { background: var(--bg-card); color: var(--text-main); }
+    .nav-item.active { background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.1)); color: var(--accent-emerald); border-left: 3px solid var(--accent-emerald); }
+    .user-profile-badge { display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-subtle); }
+    .avatar { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, var(--accent-emerald), var(--accent-teal)); color: #000; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+
+    .main-content { flex: 1; padding: 40px 48px; overflow-y: auto; height: 100vh; }
+    .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+    .header-row h1 { font-size: 28px; font-weight: 800; }
+    .header-row p { color: var(--accent-teal); font-weight: 500; font-size: 14px; margin-top: 4px; }
+    .streak-pill { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); padding: 8px 18px; border-radius: 30px; font-weight: 700; color: var(--accent-amber); font-size: 14px; }
+
+    .tab-view { display: none; }
+    .tab-view.active-view { display: block; }
+
+    .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 28px; }
+    .section-title { font-size: 12px; font-weight: 700; color: var(--text-muted); letter-spacing: 1.2px; margin-bottom: 14px; text-transform: uppercase; }
+    
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 20px; padding: 22px 16px; text-align: center; position: relative; overflow: hidden; }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent-emerald), var(--accent-teal)); }
+    .stat-icon { font-size: 22px; margin-bottom: 6px; }
+    .stat-val { font-size: 26px; font-weight: 800; }
+    .stat-lbl { font-size: 11px; color: var(--text-muted); font-weight: 700; margin-top: 4px; }
+
+    .level-card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 20px; padding: 22px; margin-bottom: 24px; }
+    .level-header { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 12px; font-size: 14px; }
+    .level-title { color: var(--accent-amber); display: flex; align-items: center; gap: 8px; }
+    .level-xp { color: var(--accent-emerald); }
+    .progress-bar { width: 100%; height: 10px; background: var(--bg-card); border-radius: 10px; overflow: hidden; }
+    .progress-fill { height: 100%; width: 70%; background: linear-gradient(90deg, var(--accent-emerald), var(--accent-teal)); border-radius: 10px; transition: width 0.4s ease; }
+
+    .quests-card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 20px; padding: 24px; }
+    .quest-item { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; }
+    .quest-item:hover { border-color: var(--accent-emerald); }
+    .quest-left { display: flex; align-items: center; gap: 14px; font-weight: 600; font-size: 14px; }
+    .checkbox { width: 22px; height: 22px; border: 2px solid #475569; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .checkbox.checked { background: var(--accent-emerald); border-color: var(--accent-emerald); }
+    .checkbox.checked::after { content: '✓'; color: #000; font-size: 14px; font-weight: 900; }
+    .xp-badge { color: var(--accent-emerald); font-weight: 700; font-size: 13px; background: rgba(16, 185, 129, 0.1); padding: 4px 10px; border-radius: 8px; }
+
+    .tool-box-card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 20px; padding: 28px; max-width: 720px; margin-bottom: 24px; }
+    .tool-box-card h3 { font-size: 18px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+    .tool-box-card p { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; line-height: 1.5; }
+    input[type="text"], input[type="file"], textarea { width: 100%; background: var(--bg-card); border: 1px solid var(--border-subtle); color: #fff; padding: 14px; border-radius: 12px; margin-bottom: 14px; font-size: 14px; outline: none; }
+    .btn-action { background: linear-gradient(135deg, var(--accent-emerald), var(--accent-teal)); color: #070d17; font-weight: 700; border: none; padding: 14px; border-radius: 12px; width: 100%; cursor: pointer; transition: all 0.2s; font-size: 14px; margin-bottom: 8px; }
+    .btn-secondary { background: var(--bg-card); border: 1px solid var(--border-subtle); color: var(--text-main); font-weight: 600; padding: 12px; border-radius: 12px; width: 100%; cursor: pointer; margin-bottom: 12px; }
+    .ai-output { margin-top: 18px; font-size: 13px; color: #cbd5e1; line-height: 1.6; white-space: pre-wrap; background: var(--bg-card); padding: 18px; border-radius: 14px; border: 1px solid var(--border-subtle); }
+    
+    .camera-box { display: none; margin-bottom: 14px; border-radius: 14px; overflow: hidden; border: 1px solid var(--border-subtle); background: #000; position: relative; }
+    video, canvas { width: 100%; height: auto; max-height: 280px; display: block; object-fit: cover; }
+    #map { width: 100%; height: 320px; border-radius: 12px; margin-bottom: 16px; border: 1px solid var(--border-subtle); }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div>
+      <div class="brand"><span class="brand-icon">🌱</span> EcoPulse</div>
+      <ul class="nav-links">
+        <li class="nav-item active" onclick="switchTab('dashboard', this)">📊 Dashboard</li>
+        <li class="nav-item" onclick="switchTab('waste-scanner', this)">♻️ Waste Scanner</li>
+        <li class="nav-item" onclick="switchTab('food-rescue', this)">🍎 Food Rescue</li>
+        <li class="nav-item" onclick="switchTab('reports', this)">🏙️ Waste Reports & Map</li>
+        <li class="nav-item" onclick="switchTab('leaderboard', this)">🎖️ Leaderboard</li>
+      </ul>
+    </div>
+    <div class="user-profile-badge">
+      <div class="avatar">N</div>
+      <div>
+        <div style="font-size: 14px; font-weight: 700;" id="sidebarName">Nikhil</div>
+        <div style="font-size: 12px; color: var(--text-muted);">Eco Guardian</div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="header-row">
+      <div>
+        <h1 id="userName">Hi, Nikhil</h1>
+        <p>Tracking your ecological footprint & community achievements</p>
+      </div>
+      <div class="streak-pill">🔥 <span id="streakCount">5</span> Day Streak</div>
+    </div>
+
+    <!-- TAB 1: DASHBOARD -->
+    <div id="tab-dashboard" class="tab-view active-view">
+      <div class="dashboard-grid">
+        <div>
+          <div class="section-title">Lifetime Environmental Impact</div>
+          <div class="stats-row">
+            <div class="stat-card">
+              <div class="stat-icon">💨</div>
+              <div class="stat-val" id="co2Val">42</div>
+              <div class="stat-lbl">KG CO2 SAVED</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">💧</div>
+              <div class="stat-val" id="waterVal">1.2k</div>
+              <div class="stat-lbl">LITERS WATER SAVED</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">♻️</div>
+              <div class="stat-val" id="wasteVal">15</div>
+              <div class="stat-lbl">KG WASTE DIVERTED</div>
+            </div>
+          </div>
+
+          <div class="level-card">
+            <div class="level-header">
+              <span class="level-title">🎖️ <span id="levelTitle">Level 3 Warrior</span></span>
+              <span class="level-xp"><span id="currXP">350</span> / <span id="maxXP">500</span> XP</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="xpBar"></div>
+            </div>
+          </div>
+
+          <div class="quests-card">
+            <div class="section-title">Daily Choices & Quests</div>
+            <div id="questsContainer"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="tool-box-card">
+            <h3>⚡ Quick AI Actions</h3>
+            <p>Launch an AI module or jump straight to live scanning.</p>
+            <button class="btn-action" style="margin-bottom: 12px;" onclick="switchTab('waste-scanner')">Open AI Waste Scanner</button>
+            <button class="btn-action" onclick="switchTab('food-rescue')">Open Food Rescue Chef</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: WASTE SCANNER -->
+    <div id="tab-waste-scanner" class="tab-view">
+      <div class="tool-box-card">
+        <h3>♻️ AI Waste Scanner</h3>
+        <p>Snap a photo with your camera or upload an image to identify recyclable materials.</p>
+        
+        <button class="btn-secondary" onclick="startCamera('waste')">📷 Open Live Camera</button>
+        <div id="wasteCameraBox" class="camera-box">
+          <video id="wasteVideo" autoplay playsinline></video>
+          <button class="btn-action" style="margin-top: 8px;" onclick="captureSnapshot('waste')">📸 Snap & Scan (+25 XP)</button>
+        </div>
+        <canvas id="wasteCanvas" style="display:none;"></canvas>
+
+        <p style="font-size: 12px; color: var(--text-muted); margin: 8px 0;">Or upload an image file:</p>
+        <input type="file" id="wastePhotoInput" accept="image/*" />
+        <button class="btn-action" onclick="analyzeWasteFile()">Scan Uploaded File (+25 XP)</button>
+        <div id="scannerResult" class="ai-output" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- TAB 3: FOOD RESCUE -->
+    <div id="tab-food-rescue" class="tab-view">
+      <div class="tool-box-card">
+        <h3>🍎 Zero-Waste Food Rescue</h3>
+        <p>Snap a picture of your fridge/leftovers or type them in to generate recipes.</p>
+        
+        <button class="btn-secondary" onclick="startCamera('food')">📷 Scan Leftovers with Camera</button>
+        <div id="foodCameraBox" class="camera-box">
+          <video id="foodVideo" autoplay playsinline></video>
+          <button class="btn-action" style="margin-top: 8px;" onclick="captureSnapshot('food')">📸 Snap & Cook Recipe (+15 XP)</button>
+        </div>
+        <canvas id="foodCanvas" style="display:none;"></canvas>
+
+        <p style="font-size: 12px; color: var(--text-muted); margin: 8px 0;">Or type ingredients manually:</p>
+        <input type="text" id="foodInput" placeholder="e.g. bread milk sugar" />
+        <button class="btn-action" onclick="rescueFoodText()">Generate Zero-Waste Recipe (+15 XP)</button>
+        <div id="foodResult" class="ai-output" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- TAB 4: COMMUNITY REPORTS -->
+    <div id="tab-reports" class="tab-view">
+      <div class="tool-box-card">
+        <h3>🏙️ Geotagged Waste Reporting & Live Pins</h3>
+        <p>Click the map below to choose a waste location, or inspect existing reported pins.</p>
+        <div id="map"></div>
+        <input type="text" id="reportLocation" placeholder="Click the map above to select GPS coordinates" />
+        <textarea id="reportDesc" rows="3" placeholder="Describe the hotspot (e.g. Unattended plastic pile near market)"></textarea>
+        <button class="btn-action" onclick="submitReport()">Save Report & Pin (+30 XP)</button>
+        <div id="reportResult" class="ai-output" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- TAB 5: LEADERBOARD -->
+    <div id="tab-leaderboard" class="tab-view">
+      <div class="tool-box-card">
+        <h3>🎖️ Community Eco Leaderboard</h3>
+        <div class="quest-item"><span>🥇 1. Aarav Sharma</span><span class="xp-badge">1,240 XP</span></div>
+        <div class="quest-item"><span>🥈 2. Nikhil (You)</span><span class="xp-badge" id="leaderboardXP">350 XP</span></div>
+        <div class="quest-item"><span>🥉 3. Priya Patel</span><span class="xp-badge">310 XP</span></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <script>
+    let activeStream = null;
+    let map = null;
+    let tempMarker = null;
+    let currentSelectedCoords = null;
+
+    // --- Live Camera Access ---
+    async function startCamera(type) {
+      if (activeStream) {
+        activeStream.getTracks().forEach(track => track.stop());
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        activeStream = stream;
+        const box = document.getElementById(type + 'CameraBox');
+        const video = document.getElementById(type + 'Video');
+        box.style.display = 'block';
+        video.srcObject = stream;
+      } catch (err) {
+        alert('Could not access camera: ' + err.message);
+      }
+    }
+
+    function captureSnapshot(type) {
+      const video = document.getElementById(type + 'Video');
+      const canvas = document.getElementById(type + 'Canvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+
+      if (activeStream) {
+        activeStream.getTracks().forEach(track => track.stop());
+        activeStream = null;
+      }
+      document.getElementById(type + 'CameraBox').style.display = 'none';
+
+      if (type === 'waste') sendWasteScan(base64);
+      else sendFoodScan(base64);
+    }
+
+    // --- Tab Switching ---
+    function switchTab(tabName, navElement) {
+      if (activeStream) {
+        activeStream.getTracks().forEach(track => track.stop());
+        activeStream = null;
+      }
+      document.querySelectorAll('.camera-box').forEach(b => b.style.display = 'none');
+      document.querySelectorAll('.tab-view').forEach(tab => tab.classList.remove('active-view'));
+      document.getElementById('tab-' + tabName).classList.add('active-view');
+
+      if (navElement) {
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        navElement.classList.add('active');
+      }
+
+      if (tabName === 'reports') setTimeout(initMap, 200);
+    }
+
+    // --- Leaflet Map with Database Markers ---
+    async function loadSavedPins() {
+      const res = await fetch('/api/reports');
+      const reports = await res.json();
+
+      reports.forEach(r => {
+        L.marker([r.lat, r.lng])
+          .addTo(map)
+          .bindPopup(`<b>⚠️ Waste Report</b><br>${r.description}<br><small>${r.location || ''}</small>`);
+      });
+    }
+
+    function initMap() {
+      if (!map) {
+        map = L.map('map').setView([28.6139, 77.2090], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+        loadSavedPins();
+
+        map.on('click', (e) => {
+          currentSelectedCoords = e.latlng;
+          if (tempMarker) tempMarker.setLatLng(e.latlng);
+          else tempMarker = L.marker(e.latlng).addTo(map);
+
+          document.getElementById('reportLocation').value = `GPS Pin: Lat ${e.latlng.lat.toFixed(4)}, Lng ${e.latlng.lng.toFixed(4)}`;
+        });
+      } else {
+        map.invalidateSize();
+      }
+    }
+
+    async function submitReport() {
+      const loc = document.getElementById('reportLocation').value;
+      const desc = document.getElementById('reportDesc').value;
+
+      if (!currentSelectedCoords || !desc) {
+        return alert('Please click on the map to pick a location and enter a description.');
+      }
+
+      const res = await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lat: currentSelectedCoords.lat,
+          lng: currentSelectedCoords.lng,
+          location: loc,
+          description: desc
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        // Bind popup to the newly created marker
+        tempMarker.bindPopup(`<b>⚠️ Waste Report</b><br>${desc}<br><small>${loc}</small>`).openPopup();
+        tempMarker = null; // Fix it permanently
+
+        document.getElementById('reportLocation').value = '';
+        document.getElementById('reportDesc').value = '';
+        
+        const resultBox = document.getElementById('reportResult');
+        resultBox.style.display = 'block';
+        resultBox.innerText = `✅ Waste report pinned to map and saved to database! (+30 XP awarded)`;
+        loadDashboard();
+      }
+    }
+
+    // --- Dashboard & Quest Logic ---
+    async function loadDashboard() {
+      const res = await fetch('/api/dashboard');
+      const { user, quests } = await res.json();
+      
+      document.getElementById('userName').innerText = `Hi, ${user.name}`;
+      document.getElementById('sidebarName').innerText = user.name;
+      document.getElementById('streakCount').innerText = user.streak;
+      document.getElementById('co2Val').innerText = user.co2_kg;
+      document.getElementById('waterVal').innerText = user.water_l;
+      document.getElementById('wasteVal').innerText = user.waste_kg;
+      document.getElementById('levelTitle').innerText = user.level;
+      document.getElementById('currXP').innerText = user.xp;
+      document.getElementById('maxXP').innerText = user.xp_max;
+      document.getElementById('leaderboardXP').innerText = user.xp + ' XP';
+
+      const pct = Math.min(100, Math.round((user.xp / user.xp_max) * 100));
+      document.getElementById('xpBar').style.width = pct + '%';
+
+      document.getElementById('questsContainer').innerHTML = quests.map(q => `
+        <div class="quest-item" onclick="toggleQuest(${q.id}, ${!q.completed})">
+          <div class="quest-left">
+            <div class="checkbox ${q.completed ? 'checked' : ''}"></div>
+            <span>${q.title}</span>
+          </div>
+          <div class="xp-badge">+${q.xp_reward} XP</div>
+        </div>
+      `).join('');
+    }
+
+    async function toggleQuest(questId, completed) {
+      await fetch('/api/quests/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questId, completed })
+      });
+      loadDashboard();
+    }
+
+    // --- AI Waste Scanning ---
+    async function sendWasteScan(imageBase64) {
+      const resultBox = document.getElementById('scannerResult');
+      resultBox.style.display = 'block';
+      resultBox.innerText = 'Analyzing with Gemini Vision AI...';
+
+      const res = await fetch('/api/ai/scan-waste', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64 })
+      });
+      const data = await res.json();
+      resultBox.innerText = data.result || data.error;
+      loadDashboard();
+    }
+
+    function analyzeWasteFile() {
+      const file = document.getElementById('wastePhotoInput').files[0];
+      if (!file) return alert('Please choose an image file first!');
+      const reader = new FileReader();
+      reader.onload = () => sendWasteScan(reader.result.split(',')[1]);
+      reader.readAsDataURL(file);
+    }
+
+    // --- AI Food Rescue ---
+    async function rescueFoodText() {
+      const ingredients = document.getElementById('foodInput').value;
+      if (!ingredients) return alert('Please enter ingredients!');
+      
+      const resultBox = document.getElementById('foodResult');
+      resultBox.style.display = 'block';
+      resultBox.innerText = 'Chef AI is cooking up a zero-waste recipe...';
+
+      const res = await fetch('/api/ai/food-rescue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ingredients })
+      });
+      const data = await res.json();
+      resultBox.innerText = data.recipe || data.error;
+      loadDashboard();
+    }
+
+    async function sendFoodScan(imageBase64) {
+      const resultBox = document.getElementById('foodResult');
+      resultBox.style.display = 'block';
+      resultBox.innerText = 'Analyzing food snapshot and generating recipe...';
+
+      const res = await fetch('/api/ai/food-rescue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64 })
+      });
+      const data = await res.json();
+      resultBox.innerText = data.recipe || data.error;
+      loadDashboard();
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>
