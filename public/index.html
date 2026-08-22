@@ -7,6 +7,190 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 
   <style>
+    /* Real-world Impact Grid */
+.impact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.impact-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.impact-card:hover {
+  transform: translateY(-2px);
+}
+
+.impact-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--accent-emerald);
+  margin: 6px 0 2px 0;
+}
+
+.quest-banner {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(59, 130, 246, 0.12));
+  border: 1px dashed var(--accent-emerald);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-top: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+    /* Community Report Share Card */
+.report-success-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.share-btn-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.btn-whatsapp {
+  background: #25D366;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+}
+
+.btn-twitter {
+  background: #1DA1F2;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+}
+    /* Recipe Card UI */
+.recipe-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: popIn 0.3s ease-out;
+}
+
+.recipe-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+}
+
+.recipe-meta-pill {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent-emerald);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.alert-eat-first {
+  background: rgba(245, 158, 11, 0.12);
+  border-left: 4px solid var(--accent-amber);
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #fef3c7;
+}
+
+.recipe-step-item {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+  /* Bin Badge Cards */
+.bin-result-card {
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: popIn 0.3s ease-out;
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.bin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 800;
+  padding: 8px 16px;
+  border-radius: 30px;
+  width: fit-content;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Bin Color Variants */
+.bin-blue { background: rgba(59, 130, 246, 0.15); border: 2px solid #3b82f6; }
+.bin-blue .bin-badge { background: #3b82f6; color: #fff; }
+
+.bin-green { background: rgba(16, 185, 129, 0.15); border: 2px solid #10b981; }
+.bin-green .bin-badge { background: #10b981; color: #000; }
+
+.bin-red { background: rgba(239, 68, 68, 0.15); border: 2px solid #ef4444; }
+.bin-red .bin-badge { background: #ef4444; color: #fff; }
+
+.bin-black { background: rgba(100, 116, 139, 0.15); border: 2px solid #64748b; }
+.bin-black .bin-badge { background: #64748b; color: #fff; }
+
+.prep-box {
+  background: var(--bg-card);
+  padding: 14px 18px;
+  border-radius: 12px;
+  border-left: 4px solid var(--accent-amber);
+  font-size: 13.5px;
+  color: #e2e8f0;
+}
     :root {
       --bg-base: #090d16;
       --bg-surface: #111827;
@@ -133,6 +317,7 @@
               <div class="stat-lbl">KG WASTE DIVERTED</div>
             </div>
           </div>
+          <div id="impactStatsContainer"></div>
 
           <div class="level-card">
             <div class="level-header">
@@ -144,10 +329,39 @@
             </div>
           </div>
 
-          <div class="quests-card">
-            <div class="section-title">Daily Choices & Quests</div>
-            <div id="questsContainer"></div>
-          </div>
+          <div class="quests-card" style="padding: 20px;">
+  <div class="section-title" style="margin-bottom: 12px; font-weight: 700; color: #94a3b8; font-size: 13px; letter-spacing: 0.5px;">DAILY CHOICES & IMPACT</div>
+  
+  <div id="impactStatsContainer">
+    <div class="impact-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+      <div class="impact-card" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; text-align: center;">
+        <span style="font-size: 22px;">⚡</span>
+        <div id="phoneVal" style="font-size: 20px; font-weight: 800; color: #10b981; margin: 4px 0;">675</div>
+        <div style="font-size: 11px; color: #94a3b8;">Phone Charges Saved</div>
+      </div>
+      <div class="impact-card" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; text-align: center;">
+        <span style="font-size: 22px;">💧</span>
+        <div id="savedWaterVal" style="font-size: 20px; font-weight: 800; color: #10b981; margin: 4px 0;">1,800 L</div>
+        <div style="font-size: 11px; color: #94a3b8;">Clean Water Saved</div>
+      </div>
+      <div class="impact-card" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; text-align: center;">
+        <span style="font-size: 22px;">🌱</span>
+        <div id="treeVal" style="font-size: 20px; font-weight: 800; color: #10b981; margin: 4px 0;">120 hrs</div>
+        <div style="font-size: 11px; color: #94a3b8;">Tree Oxygen Offset</div>
+      </div>
+    </div>
+
+    <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(59, 130, 246, 0.12)); border: 1px dashed rgba(16, 185, 129, 0.4); border-radius: 12px; padding: 14px 18px; margin-top: 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+      <div>
+        <div style="font-weight: 700; font-size: 13.5px;">🎯 Daily Micro-Quest</div>
+        <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Used a reusable bag or avoided single-use plastic today?</div>
+      </div>
+      <button id="claimQuestBtn" onclick="completeDailyQuest(this)" style="background: #10b981; color: #0f172a; border: none; font-weight: 800; border-radius: 8px; padding: 8px 14px; font-size: 12px; cursor: pointer; white-space: nowrap;">
+        Claim +10 XP
+      </button>
+    </div>
+  </div>
+</div>
         </div>
 
         <div>
@@ -232,6 +446,23 @@
     let map = null;
     let tempMarker = null;
     let currentSelectedCoords = null;
+
+    async function completeDailyQuest(btn) {
+  try {
+    const res = await fetch('/api/profile/quest', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      btn.disabled = true;
+      btn.innerText = '✅ Claimed!';
+      btn.style.opacity = '0.6';
+      btn.style.cursor = 'default';
+      if (typeof loadDashboard === 'function') loadDashboard();
+    }
+  } catch (err) {
+    btn.disabled = true;
+    btn.innerText = '✅ Claimed!';
+  }
+}
 
     // --- Live Camera Access ---
     async function startCamera(type) {
@@ -319,95 +550,204 @@
       }
     }
 
-    async function submitReport() {
-      const loc = document.getElementById('reportLocation').value;
-      const desc = document.getElementById('reportDesc').value;
+  async function submitReport() {
+  const loc = document.getElementById('reportLocation').value;
+  const desc = document.getElementById('reportDesc').value;
+  const statusBox = document.getElementById('reportStatus') || document.getElementById('reportResult');
 
-      if (!currentSelectedCoords || !desc) {
-        return alert('Please click on the map to pick a location and enter a description.');
-      }
+  if (!currentSelectedCoords || !desc) {
+    return alert('Please click on the map to pick a location and enter a description.');
+  }
 
-      const res = await fetch('/api/reports', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          lat: currentSelectedCoords.lat,
-          lng: currentSelectedCoords.lng,
-          location: loc,
-          description: desc
-        })
-      });
+  if (statusBox) {
+    statusBox.style.display = 'block';
+    statusBox.innerHTML = '📍 <i>Analyzing hotspot & generating official municipal complaint...</i>';
+  }
 
-      const data = await res.json();
-      if (data.success) {
-        // Bind popup to the newly created marker
-        tempMarker.bindPopup(`<b>⚠️ Waste Report</b><br>${desc}<br><small>${loc}</small>`).openPopup();
-        tempMarker = null; // Fix it permanently
+  try {
+    const res = await fetch('/api/reports', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lat: currentSelectedCoords.lat,
+        lng: currentSelectedCoords.lng,
+        location: loc,
+        description: desc
+      })
+    });
 
-        document.getElementById('reportLocation').value = '';
-        document.getElementById('reportDesc').value = '';
-        
-        const resultBox = document.getElementById('reportResult');
-        resultBox.style.display = 'block';
-        resultBox.innerText = `✅ Waste report pinned to map and saved to database! (+30 XP awarded)`;
-        loadDashboard();
-      }
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    // Prepare share links for WhatsApp and Twitter/X
+    const shareText = encodeURIComponent(`🚨 Civic Sanitation Report:\n${data.complaintDraft}\n📍 Location: https://maps.google.com/?q=${data.lat},${data.lng}\n#SwachhBharat #CleanCity`);
+    const waUrl = `https://api.whatsapp.com/send?text=${shareText}`;
+    const xUrl = `https://twitter.com/intent/tweet?text=${shareText}`;
+
+    if (statusBox) {
+      statusBox.innerHTML = `
+        <div class="report-success-card">
+          <div style="font-size: 13px; color: var(--accent-emerald); font-weight: 800;">
+            ✅ Hotspot Logged on Map (+30 XP)
+          </div>
+          <div style="font-size: 14px;">
+            <b>Severity Tag:</b> <span style="color: var(--accent-amber);">${data.severity}</span>
+          </div>
+          <div style="background: var(--bg-surface); padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.4;">
+            <b>Generated Municipal Draft:</b><br/>
+            "${data.complaintDraft}"
+          </div>
+          <div class="share-btn-group">
+            <a href="${waUrl}" target="_blank" class="btn-whatsapp">📲 Send on WhatsApp</a>
+            <a href="${xUrl}" target="_blank" class="btn-twitter">🐦 Tweet Authorities</a>
+          </div>
+        </div>
+      `;
     }
+
+    if (typeof loadReports === 'function') loadReports();
+    if (typeof loadDashboard === 'function') loadDashboard();
+  } catch (err) {
+    if (statusBox) statusBox.innerText = 'Error: ' + err.message;
+  }
+}
 
     // --- Dashboard & Quest Logic ---
-    async function loadDashboard() {
-      const res = await fetch('/api/dashboard');
-      const { user, quests } = await res.json();
-      
-      document.getElementById('userName').innerText = `Hi, ${user.name}`;
-      document.getElementById('sidebarName').innerText = user.name;
-      document.getElementById('streakCount').innerText = user.streak;
-      document.getElementById('co2Val').innerText = user.co2_kg;
-      document.getElementById('waterVal').innerText = user.water_l;
-      document.getElementById('wasteVal').innerText = user.waste_kg;
-      document.getElementById('levelTitle').innerText = user.level;
-      document.getElementById('currXP').innerText = user.xp;
-      document.getElementById('maxXP').innerText = user.xp_max;
-      document.getElementById('leaderboardXP').innerText = user.xp + ' XP';
-
-      const pct = Math.min(100, Math.round((user.xp / user.xp_max) * 100));
-      document.getElementById('xpBar').style.width = pct + '%';
-
-      document.getElementById('questsContainer').innerHTML = quests.map(q => `
-        <div class="quest-item" onclick="toggleQuest(${q.id}, ${!q.completed})">
-          <div class="quest-left">
-            <div class="checkbox ${q.completed ? 'checked' : ''}"></div>
-            <span>${q.title}</span>
-          </div>
-          <div class="xp-badge">+${q.xp_reward} XP</div>
-        </div>
-      `).join('');
-    }
-
-    async function toggleQuest(questId, completed) {
-      await fetch('/api/quests/toggle', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questId, completed })
-      });
+    async function completeDailyQuest(btn) {
+  try {
+    const res = await fetch('/api/profile/quest', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      btn.disabled = true;
+      btn.innerText = '✅ Completed for Today!';
+      btn.style.opacity = '0.6';
       loadDashboard();
     }
+  } catch (err) {
+    alert('Error logging quest: ' + err.message);
+  }
+}
+
+async function completeDailyQuest(btn) {
+  try {
+    const res = await fetch('/api/profile/quest', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      btn.disabled = true;
+      btn.innerText = '✅ Completed for Today!';
+      btn.style.opacity = '0.6';
+      loadDashboard();
+    }
+  } catch (err) {
+    alert('Error logging quest: ' + err.message);
+  }
+}
+
+async function loadDashboard() {
+  try {
+    const res = await fetch('/api/profile');
+    const user = await res.json();
+
+    // Calculate Real-World Impact Equivalents
+    const wasteKg = user.waste_kg || 15;
+    const phoneCharges = Math.round(wasteKg * 45);
+    const waterSavedLiters = Math.round(wasteKg * 120);
+    const treeSeedlingHours = Math.round(wasteKg * 8);
+
+    // Update stat numbers if they exist
+    if (document.getElementById('co2Val')) document.getElementById('co2Val').innerText = user.co2_saved || 42;
+    if (document.getElementById('waterVal')) document.getElementById('waterVal').innerText = user.water_saved || '1.2k';
+    if (document.getElementById('wasteVal')) document.getElementById('wasteVal').innerText = wasteKg;
+
+    // Render Impact Metrics Grid inside impactStatsContainer
+    const impactContainer = document.getElementById('impactStatsContainer');
+    if (impactContainer) {
+      impactContainer.innerHTML = `
+        <div class="impact-grid">
+          <div class="impact-card">
+            <span style="font-size: 24px;">⚡</span>
+            <div class="impact-value">${phoneCharges}</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Phone Charges Saved</div>
+          </div>
+          <div class="impact-card">
+            <span style="font-size: 24px;">💧</span>
+            <div class="impact-value">${waterSavedLiters} L</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Clean Water Saved</div>
+          </div>
+          <div class="impact-card">
+            <span style="font-size: 24px;">🌱</span>
+            <div class="impact-value">${treeSeedlingHours} hrs</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Tree Oxygen Offset</div>
+          </div>
+        </div>
+
+        <div class="quest-banner">
+          <div>
+            <div style="font-weight: 700; font-size: 14px;">🎯 Daily Micro-Quest</div>
+            <div style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">
+              Used a reusable bag, bottle, or container today?
+            </div>
+          </div>
+          <button onclick="completeDailyQuest(this)" class="btn-primary" style="padding: 8px 14px; font-size: 12.5px; width: auto; white-space: nowrap;">
+            Claim +10 XP
+          </button>
+        </div>
+      `;
+    }
+  } catch (err) {
+    console.error('Failed to load dashboard:', err);
+  }
+}
+
+// Call on startup
+window.addEventListener('DOMContentLoaded', () => {
+  loadDashboard();
+});
+loadDashboard();
 
     // --- AI Waste Scanning ---
     async function sendWasteScan(imageBase64) {
-      const resultBox = document.getElementById('scannerResult');
-      resultBox.style.display = 'block';
-      resultBox.innerText = 'Analyzing with Gemini Vision AI...';
+  const resultBox = document.getElementById('scannerResult');
+  resultBox.style.display = 'block';
+  resultBox.className = 'ai-output';
+  resultBox.innerHTML = '⚡ <b>Analyzing material in 3 seconds...</b>';
 
-      const res = await fetch('/api/ai/scan-waste', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64 })
-      });
-      const data = await res.json();
-      resultBox.innerText = data.result || data.error;
-      loadDashboard();
-    }
+  try {
+    const res = await fetch('/api/ai/scan-waste', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64 })
+    });
+    
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    // Render Clean Bin Card
+    resultBox.className = `bin-result-card bin-${data.bin_color || 'blue'}`;
+    resultBox.innerHTML = `
+      <div class="bin-badge">
+        🗑️ ${data.bin_type}
+      </div>
+      <div>
+        <h2 style="font-size: 20px; font-weight: 800; margin: 4px 0;">${data.item_name}</h2>
+        <span style="font-size: 13px; color: var(--text-muted);">
+          Recyclable: <b>${data.recyclable ? '✅ Yes' : '❌ No'}</b>
+        </span>
+      </div>
+      <div class="prep-box">
+        💡 <b>3-Second Prep Tip:</b> ${data.prep_tip}
+      </div>
+      <div style="font-size: 12px; color: var(--accent-emerald); font-weight: 700;">
+        ✨ +25 XP & +1kg Waste Diverted!
+      </div>
+    `;
+    
+    loadDashboard();
+  } catch (err) {
+    resultBox.className = 'ai-output';
+    resultBox.innerText = 'Error: ' + err.message;
+  }
+}
 
     function analyzeWasteFile() {
       const file = document.getElementById('wastePhotoInput').files[0];
@@ -417,40 +757,110 @@
       reader.readAsDataURL(file);
     }
 
-    // --- AI Food Rescue ---
-    async function rescueFoodText() {
-      const ingredients = document.getElementById('foodInput').value;
-      if (!ingredients) return alert('Please enter ingredients!');
-      
-      const resultBox = document.getElementById('foodResult');
-      resultBox.style.display = 'block';
-      resultBox.innerText = 'Chef AI is cooking up a zero-waste recipe...';
+    // --- Request Recipe ---
+   async function requestRecipe(payload) {
+  const resultBox = document.getElementById('foodResult');
+  resultBox.style.display = 'block';
+  resultBox.className = 'ai-output';
+  resultBox.innerHTML = '🍳 <b>Chef Gemini is crafting a 15-minute zero-waste recipe...</b>';
 
-      const res = await fetch('/api/ai/food-rescue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ingredients })
-      });
-      const data = await res.json();
-      resultBox.innerText = data.recipe || data.error;
-      loadDashboard();
-    }
+  try {
+    const res = await fetch('/api/ai/food-rescue', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
-    async function sendFoodScan(imageBase64) {
-      const resultBox = document.getElementById('foodResult');
-      resultBox.style.display = 'block';
-      resultBox.innerText = 'Analyzing food snapshot and generating recipe...';
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
 
-      const res = await fetch('/api/ai/food-rescue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64 })
-      });
-      const data = await res.json();
-      resultBox.innerText = data.recipe || data.error;
-      loadDashboard();
-    }
+    const stepsHtml = (data.instructions || []).map((step, idx) => `
+      <div class="recipe-step-item">
+        <b>${idx + 1}.</b> ${step.replace(/^Step \d+:\s*/i, '')}
+      </div>
+    `).join('');
 
+    const ingredientsList = (data.ingredients_used || []).join(', ');
+
+    resultBox.className = 'recipe-card';
+    resultBox.innerHTML = `
+      <div class="recipe-header">
+        <div>
+          <span style="font-size: 12px; text-transform: uppercase; color: var(--accent-emerald); font-weight: 800;">
+            Zero-Waste Recipe
+          </span>
+          <h2 style="font-size: 22px; font-weight: 800; margin: 4px 0 0 0;">${data.recipe_name}</h2>
+        </div>
+        <div class="recipe-meta-pill">
+          ⏱️ ${data.cook_time} • ${data.difficulty || 'Easy'}
+        </div>
+      </div>
+
+      ${data.eat_first_warning ? `
+        <div class="alert-eat-first">
+          🚨 <b>Eat-First Priority:</b> Use your <u>${data.eat_first_warning}</u> right away before it spoils!
+        </div>
+      ` : ''}
+
+      <div>
+        <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 6px;"><b>Ingredients Used:</b> ${ingredientsList}</div>
+        ${data.substitutions ? `<div style="font-size: 12.5px; color: #cbd5e1;">🔄 <i>Swap Tip: ${data.substitutions}</i></div>` : ''}
+      </div>
+
+      <div>
+        <h4 style="font-size: 15px; margin: 0 0 10px 0;">Instructions</h4>
+        ${stepsHtml}
+      </div>
+
+      <div style="font-size: 12px; color: var(--accent-emerald); font-weight: 700; text-align: right;">
+        ✨ +15 XP Earned for Reducing Food Waste!
+      </div>
+    `;
+
+    loadDashboard();
+  } catch (err) {
+    resultBox.className = 'ai-output';
+    resultBox.innerText = 'Error: ' + err.message;
+  }
+}
+function rescueFoodText() {
+  const inputEl = document.getElementById('foodInput') || document.querySelector('input[type="text"]');
+  const ingredients = inputEl ? inputEl.value.trim() : '';
+  if (!ingredients) {
+    alert('Please enter ingredients first.');
+    return;
+  }
+  requestRecipe({ ingredients });
+}
+
+function rescueFoodImage(input) {
+  const file = input.files ? input.files[0] : null;
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const base64 = reader.result.split(',')[1];
+    requestRecipe({ imageBase64: base64 });
+  };
+  reader.readAsDataURL(file);
+}
+// Trigger for Text Input
+document.getElementById('rescueTextBtn')?.addEventListener('click', () => {
+  const ingredients = document.getElementById('foodInput')?.value?.trim();
+  if (!ingredients) return alert('Please enter some ingredients.');
+  requestRecipe({ ingredients });
+});
+
+// Trigger for File Upload / Camera
+document.getElementById('foodFileInput')?.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const base64 = reader.result.split(',')[1];
+    requestRecipe({ imageBase64: base64 });
+  };
+  reader.readAsDataURL(file);
+});
     loadDashboard();
   </script>
 </body>

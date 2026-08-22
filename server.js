@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 
 // Initialize Gemini Client
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
 
 app.use(express.json({ limit: '15mb' }));
 app.use(express.static('public'));
@@ -97,26 +97,153 @@ app.get('/api/reports', (req, res) => {
   });
 });
 
-app.post('/api/reports', (req, res) => {
-  const { lat, lng, location, description } = req.body;
-  if (!lat || !lng || !description) {
-    return res.status(400).json({ error: 'Missing coordinates or description.' });
+// AI Community Waste Report (Auto-Drafting & Severity Analysis)
+app.post('/api/reports', async (req, res) => {
+  try {
+    const { lat, lng, location, description, imageBase64 } = req.body;
+    if (!lat || !lng) {
+      return res.status(400).json({ error: 'Missing location coordinates.' });
+    }
+
+    let severity = "Moderate Waste";
+    let complaintDraft = `Official Waste Clearance Request:\nLocation: ${location || 'Coordinates ' + lat + ', ' + lng}\nDetails: ${description || 'Illegal garbage accumulation reported.'}\nPlease take prompt action to clear this hotspot.`;
+
+    // If an image or description is provided, use Gemini to classify and draft an official complaint
+    if (imageBase64 || description) {
+      const prompt = `You are a municipal civic assistant. Analyze this reported garbage hotspot (Description: "${description || 'None'}") and generate a JSON response matching:
+{
+  "severity": "High Biohazard" | "Plastic Accumulation" | "Drainage Blockage" | "General Litter",
+  "complaint_draft": "A professional, polite 2-sentence complaint addressed to municipal sanitation authorities requesting quick clearance with the coordinates (${lat}, ${lng})."
+}
+Return ONLY valid JSON.`;
+
+      let parts = [prompt];
+      if (imageBase64) {
+        parts.push({
+          inlineData: {
+            data: imageBase64,
+            mimeType: "image/jpeg"
+          }
+        });
+      }
+
+      const result = await model.generateContent(parts);
+      const response = await result.response;
+      
+      let rawText = response.text().trim();
+      if (rawText.startsWith('```json')) {
+        rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+      } else if (rawText.startsWith('```')) {
+        rawText = rawText.replace(/```/g, '').trim();
+      }
+
+      const parsed = JSON.parse(rawText);
+      severity = parsed.severity || severity;
+      complaintDraft = parsed.complaint_draft || complaintDraft;
+    }
+
+    db.run(
+      'INSERT INTO reports (lat, lng, location, description) VALUES (?, ?, ?, ?)',
+      [lat, lng, location || `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`, `${severity} - ${description || 'Hotspot reported'}`],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        db.run('UPDATE profile SET xp = xp + 30 WHERE id = 1');
+        res.json({
+          id: this.lastID,
+          success: true,
+          severity,
+          complaintDraft,
+          lat,
+          lng
+        });
+      }
+    );
+  } catch (error) {
+    console.error("Report Error:", error);
+    res.status(500).json({ error: error.message || 'Failed to submit report' });
   }
+});// AI Community Waste Report (Auto-Drafting & Severity Analysis)
+app.post('/api/reports', async (req, res) => {
+  try {
+    const { lat, lng, location, description, imageBase64 } = req.body;
+    if (!lat || !lng) {
+      return res.status(400).json({ error: 'Missing location coordinates.' });
+    }
 
-  db.run('INSERT INTO reports (lat, lng, location, description) VALUES (?, ?, ?, ?)', [lat, lng, location, description], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
-    db.run('UPDATE profile SET xp = xp + 30 WHERE id = 1');
-    res.json({ id: this.lastID, success: true });
-  });
+    let severity = "Moderate Waste";
+    let complaintDraft = `Official Waste Clearance Request:\nLocation: ${location || 'Coordinates ' + lat + ', ' + lng}\nDetails: ${description || 'Illegal garbage accumulation reported.'}\nPlease take prompt action to clear this hotspot.`;
+
+    // If an image or description is provided, use Gemini to classify and draft an official complaint
+    if (imageBase64 || description) {
+      const prompt = `You are a municipal civic assistant. Analyze this reported garbage hotspot (Description: "${description || 'None'}") and generate a JSON response matching:
+{
+  "severity": "High Biohazard" | "Plastic Accumulation" | "Drainage Blockage" | "General Litter",
+  "complaint_draft": "A professional, polite 2-sentence complaint addressed to municipal sanitation authorities requesting quick clearance with the coordinates (${lat}, ${lng})."
+}
+Return ONLY valid JSON.`;
+
+      let parts = [prompt];
+      if (imageBase64) {
+        parts.push({
+          inlineData: {
+            data: imageBase64,
+            mimeType: "image/jpeg"
+          }
+        });
+      }
+
+      const result = await model.generateContent(parts);
+      const response = await result.response;
+      
+      let rawText = response.text().trim();
+      if (rawText.startsWith('```json')) {
+        rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+      } else if (rawText.startsWith('```')) {
+        rawText = rawText.replace(/```/g, '').trim();
+      }
+
+      const parsed = JSON.parse(rawText);
+      severity = parsed.severity || severity;
+      complaintDraft = parsed.complaint_draft || complaintDraft;
+    }
+
+    db.run(
+      'INSERT INTO reports (lat, lng, location, description) VALUES (?, ?, ?, ?)',
+      [lat, lng, location || `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`, `${severity} - ${description || 'Hotspot reported'}`],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        db.run('UPDATE profile SET xp = xp + 30 WHERE id = 1');
+        res.json({
+          id: this.lastID,
+          success: true,
+          severity,
+          complaintDraft,
+          lat,
+          lng
+        });
+      }
+    );
+  } catch (error) {
+    console.error("Report Error:", error);
+    res.status(500).json({ error: error.message || 'Failed to submit report' });
+  }
 });
-
-// AI Waste Scanner
+// AI Waste Scanner (Structured 3-Second Bin Output)
 app.post('/api/ai/scan-waste', async (req, res) => {
   try {
     const { imageBase64 } = req.body;
     if (!imageBase64) return res.status(400).json({ error: 'No image provided' });
 
-    const prompt = "Analyze this item in 3 short bullet points: 1. Material name 2. Is it recyclable? (Yes/No) 3. Exactly how to dispose/recycle it. Keep it concise.";
+    const prompt = `Analyze this waste/item image. Return ONLY a valid JSON object matching this exact schema:
+{
+  "item_name": "Short name of item",
+  "bin_type": "Blue (Dry/Recycle)" | "Green (Organic/Wet)" | "Red (Hazardous/E-Waste)" | "Black (Landfill)",
+  "bin_color": "blue" | "green" | "red" | "black",
+  "prep_tip": "One short sentence on what to do before throwing (e.g., Rinse residue, crush flat, remove cap)",
+  "recyclable": true | false
+}
+Do not include markdown fences or any other text outside the JSON.`;
+
     const imagePart = {
       inlineData: {
         data: imageBase64,
@@ -126,22 +253,49 @@ app.post('/api/ai/scan-waste', async (req, res) => {
 
     const result = await model.generateContent([prompt, imagePart]);
     const response = await result.response;
+    
+    // Clean up potential markdown formatting in response text
+    let rawText = response.text().trim();
+    if (rawText.startsWith('```json')) {
+      rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+    } else if (rawText.startsWith('```')) {
+      rawText = rawText.replace(/```/g, '').trim();
+    }
+
+    const parsedData = JSON.parse(rawText);
 
     db.run('UPDATE profile SET xp = xp + 25, waste_kg = waste_kg + 1 WHERE id = 1');
-    res.json({ result: response.text() });
+    res.json(parsedData);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Waste Scan Error:", error);
+    res.status(500).json({ error: error.message || 'Failed to analyze item' });
   }
 });
 
-// AI Food Rescue
+// AI Food Rescue (Structured Zero-Waste Recipe Output)
 app.post('/api/ai/food-rescue', async (req, res) => {
   try {
     const { ingredients, imageBase64 } = req.body;
     let parts = [];
 
+    const prompt = `You are a zero-waste chef. Analyze the provided ingredients or image. Return ONLY a valid JSON object matching this exact schema:
+{
+  "recipe_name": "Appealing, simple recipe name",
+  "cook_time": "e.g., 15 mins",
+  "difficulty": "Easy" | "Medium",
+  "eat_first_warning": "Name 1 ingredient that spoils fastest and needs to be used immediately",
+  "ingredients_used": ["List of main ingredients"],
+  "substitutions": "1 quick pantry swap tip if they are missing common seasoning/oil",
+  "instructions": [
+    "Step 1: Prep and chop...",
+    "Step 2: Cook...",
+    "Step 3: Garnish and serve..."
+  ]
+}
+Keep steps ultra-simple and focused on saving food from going to waste. Do not include markdown fences or any text outside JSON.`;
+
     if (imageBase64) {
-      parts.push("Look at this food image, identify visible ingredients, and generate 1 zero-waste recipe with: 1. Recipe Name 2. Cooking Time 3. 3-step Instructions.");
+      parts.push(prompt);
       parts.push({
         inlineData: {
           data: imageBase64,
@@ -149,19 +303,37 @@ app.post('/api/ai/food-rescue', async (req, res) => {
         }
       });
     } else if (ingredients) {
-      parts.push(`I have these leftover ingredients: "${ingredients}". Suggest 1 quick, zero-waste recipe with: Recipe Name, Cooking Time, and 3 Simple Steps.`);
+      parts.push(`${prompt}\n\nAvailable Ingredients: ${ingredients}`);
     } else {
-      return res.status(400).json({ error: 'Please enter ingredients or scan an image of food.' });
+      return res.status(400).json({ error: 'Please enter ingredients or scan food items.' });
     }
 
     const result = await model.generateContent(parts);
     const response = await result.response;
 
+    let rawText = response.text().trim();
+    if (rawText.startsWith('```json')) {
+      rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+    } else if (rawText.startsWith('```')) {
+      rawText = rawText.replace(/```/g, '').trim();
+    }
+
+    const parsedRecipe = JSON.parse(rawText);
+
     db.run('UPDATE profile SET xp = xp + 15 WHERE id = 1');
-    res.json({ recipe: response.text() });
+    res.json(parsedRecipe);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Food Rescue Error:", error);
+    res.status(500).json({ error: error.message || 'Failed to generate recipe' });
   }
+});
+
+// Complete a Daily Micro-Habit Quest
+app.post('/api/profile/quest', (req, res) => {
+  db.run('UPDATE profile SET xp = xp + 10, streak_days = streak_days + 1 WHERE id = 1', function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true, message: 'Habit completed! +10 XP' });
+  });
 });
 
 app.listen(PORT, () => {
