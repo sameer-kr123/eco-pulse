@@ -1,19 +1,19 @@
 {
   "name": "my-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "description": "AI Sustainability Companion",
+  "main": "server.js",
+  "engines": {
+    "node": ">=20.0.0"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "build": "npm rebuild sqlite3"
+  },
   "dependencies": {
-    "@google/genai": "^2.18.0",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "sqlite3": "^6.0.1"
+    "@google/genai": "^0.1.1",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "sqlite3": "^5.1.7"
   }
 }
