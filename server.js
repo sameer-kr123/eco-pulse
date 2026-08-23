@@ -406,18 +406,26 @@ db.serialize(() => {
     }
   });
 });
-
 // Get Live Community Leaderboard (Including You)
 app.get('/api/leaderboard', (req, res) => {
-  db.get('SELECT name, xp, streak_days FROM profile WHERE id = 1', (err, user) => {
+  db.get('SELECT name, xp, streak FROM profile WHERE id = 1', (err, user) => {
     if (err) return res.status(500).json({ error: err.message });
 
     db.all('SELECT name, xp, streak, avatar FROM leaderboard', (err, competitors) => {
       if (err) return res.status(500).json({ error: err.message });
 
+      const userName = user?.name || 'You';
+      const userInitial = userName.charAt(0).toUpperCase();
+
       const allUsers = [
-        ...competitors,
-        { name: user.name + ' (You)', xp: user.xp, streak: user.streak_days, isCurrent: true, avatar: user.name.charAt(0).toUpperCase() }
+        ...(competitors || []),
+        { 
+          name: userName, 
+          xp: user?.xp || 0, 
+          streak: user?.streak || 0, 
+          isCurrent: true, 
+          avatar: userInitial 
+        }
       ];
 
       // Sort by highest XP descending
