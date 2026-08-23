@@ -38,21 +38,24 @@ db.serialize(() => {
     VALUES (1, 'Nikhil', 0, 0, 100, 'Level 1 - 🌱 Eco Rookie', 0, '0', 0, '')
   `);
 
-  // 2. Quests Table
+ // 2. Quests Table
   db.run(`
     CREATE TABLE IF NOT EXISTS quests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT,
       xp_reward INTEGER,
-      completed INTEGER DEFAULT 0
+      completed INTEGER DEFAULT 0,
+      last_completed_date TEXT DEFAULT ''
     )
   `);
 
-  // Safe seed for initial quests
-  db.run(`INSERT OR IGNORE INTO quests (id, title, xp_reward, completed) VALUES (1, 'Brought a Reusable Bag', 15, 0)`);
-  db.run(`INSERT OR IGNORE INTO quests (id, title, xp_reward, completed) VALUES (2, 'Zero Leftover Meal', 20, 0)`);
-  db.run(`INSERT OR IGNORE INTO quests (id, title, xp_reward, completed) VALUES (3, 'Walk / Cycle Short Trips', 25, 0)`);
+  // Ensure column exists for existing DBs
+  db.run(`ALTER TABLE quests ADD COLUMN last_completed_date TEXT DEFAULT ''`, () => {});
 
+  // Safe seed for initial quests
+  db.run(`INSERT OR IGNORE INTO quests (id, title, xp_reward, completed, last_completed_date) VALUES (1, 'Brought a Reusable Bag', 15, 0, '')`);
+  db.run(`INSERT OR IGNORE INTO quests (id, title, xp_reward, completed, last_completed_date) VALUES (2, 'Zero Leftover Meal', 20, 0, '')`);
+  db.run(`INSERT OR IGNORE INTO quests (id, title, xp_reward, completed, last_completed_date) VALUES (3, 'Walk / Cycle Short Trips', 25, 0, '')`);
   // 3. Reports Table
   db.run(`
     CREATE TABLE IF NOT EXISTS reports (
@@ -92,22 +95,27 @@ function evaluateStreak(profile) {
   return { streak: currentStreak, multiplier, diffDays };
 }
 app.get('/api/dashboard', (req, res) => {
-  db.get('SELECT * FROM profile WHERE id = 1', (err, user) => {
-    if (err) return res.status(500).json({ error: err.message });
+  const todayStr = new Date().toISOString().split('T')[0];
 
-    const streakData = evaluateStreak(user);
+  // Auto-refresh quests if last completed date is not today
+  db.run(`UPDATE quests SET completed = 0 WHERE last_completed_date != ?`, [todayStr], () => {
+    db.get('SELECT * FROM profile WHERE id = 1', (err, user) => {
+      if (err) return res.status(500).json({ error: err.message });
 
-    // If streak expired while user was away, sync DB automatically
-    const updateStreak = (streakData.streak !== user?.streak)
-      ? new Promise((resolve) => db.run('UPDATE profile SET streak = ? WHERE id = 1', [streakData.streak], resolve))
-      : Promise.resolve();
+      const streakData = evaluateStreak(user);
 
-    updateStreak.then(() => {
-      db.all('SELECT * FROM quests', (err, quests) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({
-          user: { ...user, streak: streakData.streak, multiplier: streakData.multiplier },
-          quests
+      // If streak expired while user was away, sync DB automatically
+      const updateStreak = (streakData.streak !== user?.streak)
+        ? new Promise((resolve) => db.run('UPDATE profile SET streak = ? WHERE id = 1', [streakData.streak], resolve))
+        : Promise.resolve();
+
+      updateStreak.then(() => {
+        db.all('SELECT * FROM quests', (err, quests) => {
+          if (err) return res.status(500).json({ error: err.message });
+          res.json({
+            user: { ...user, streak: streakData.streak, multiplier: streakData.multiplier },
+            quests
+          });
         });
       });
     });
@@ -118,15 +126,19 @@ app.get('/api/dashboard', (req, res) => {
 app.post('/api/quests/toggle', (req, res) => {
   const { questId, completed } = req.body;
   const isDone = completed ? 1 : 0;
+  const todayStr = new Date().toISOString().split('T')[0];
 
-  db.get('SELECT xp_reward FROM quests WHERE id = ?', [questId], (err, quest) => {
+  db.get('SELECT xp_reward, completed FROM quests WHERE id = ?', [questId], (err, quest) => {
     if (err) return res.status(500).json({ error: err.message });
+    if (isDone && quest && quest.completed === 1) {
+      return res.status(400).json({ error: 'Quest already claimed for today!' });
+    }
+
     const rawXp = quest ? quest.xp_reward : (parseInt(req.body.xp, 10) || 15);
 
     db.get('SELECT xp, streak, last_active_date FROM profile WHERE id = 1', (err, profile) => {
       if (err) return res.status(500).json({ error: err.message });
 
-      const todayStr = new Date().toISOString().split('T')[0];
       const streakData = evaluateStreak(profile);
       let newStreak = streakData.streak;
 
@@ -144,16 +156,26 @@ app.post('/api/quests/toggle', (req, res) => {
       const earnedXp = Math.round(rawXp * streakData.multiplier);
       const xpChange = isDone ? earnedXp : -earnedXp;
 
+      // 1. Update Profile (XP, Streak, Active Date)
       db.run(
         'UPDATE profile SET xp = MAX(0, xp + ?), streak = ?, last_active_date = ? WHERE id = 1',
         [xpChange, newStreak, todayStr],
         function (updateErr) {
           if (updateErr) return res.status(500).json({ error: updateErr.message });
 
-          db.get('SELECT * FROM profile WHERE id = 1', (fetchErr, updatedUser) => {
-            if (fetchErr) return res.status(500).json({ error: fetchErr.message });
-            res.json({ success: true, user: updatedUser, earnedXp, multiplier: streakData.multiplier });
-          });
+          // 2. Mark Quest as Completed & Record Today's Date
+          db.run(
+            'UPDATE quests SET completed = ?, last_completed_date = ? WHERE id = ?',
+            [isDone, isDone ? todayStr : '', questId],
+            function (questErr) {
+              if (questErr) return res.status(500).json({ error: questErr.message });
+
+              db.get('SELECT * FROM profile WHERE id = 1', (fetchErr, updatedUser) => {
+                if (fetchErr) return res.status(500).json({ error: fetchErr.message });
+                res.json({ success: true, user: updatedUser, earnedXp, multiplier: streakData.multiplier });
+              });
+            }
+          );
         }
       );
     });

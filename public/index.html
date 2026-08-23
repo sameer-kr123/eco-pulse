@@ -394,7 +394,7 @@
                     <div style="font-size: 11.5px; color: var(--text-muted);">Avoid single-use polythene bags today</div>
                   </div>
                 </div>
-                <button onclick="claimQuest(1, 15, this)" class="btn-action" style="width: auto; padding: 6px 14px; font-size: 12px; margin: 0;">+15 XP</button>
+                <button data-quest-id="1" onclick="claimQuest(1, 15, this)" class="btn-action" style="width: auto; padding: 6px 14px; font-size: 12px;">+15 XP</button>
               </div>
 
               <!-- Quest 2 -->
@@ -406,7 +406,7 @@
                     <div style="font-size: 11.5px; color: var(--text-muted);">Finish all food or rescue leftovers with Chef</div>
                   </div>
                 </div>
-                <button onclick="claimQuest(2, 20, this)" class="btn-action" style="width: auto; padding: 6px 14px; font-size: 12px; margin: 0;">+20 XP</button>
+                <button data-quest-id="2" onclick="claimQuest(2, 20, this)" class="btn-action" style="width: auto; padding: 6px 14px; font-size: 12px;">+20 XP</button>
               </div>
 
               <!-- Quest 3 -->
@@ -418,7 +418,7 @@
                     <div style="font-size: 11.5px; color: var(--text-muted);">Cut fossil fuel emissions for trips under 2 km</div>
                   </div>
                 </div>
-                <button onclick="claimQuest(3, 25, this)" class="btn-action" style="width: auto; padding: 6px 14px; font-size: 12px; margin: 0;">+25 XP</button>
+                <button data-quest-id="3" onclick="claimQuest(3, 25, this)" class="btn-action" style="width: auto; padding: 6px 14px; font-size: 12px;">+25 XP</button>
               </div>
             </div>
           </div>
@@ -705,10 +705,40 @@ async function loadDashboard() {
     if (xpBar) {
       xpBar.style.width = `${lvl.progressPercent}%`;
     }
+    // 6. Sync Daily Quests state with DB
+    if (data.quests) {
+      renderQuests(data.quests);
+    }
 
   } catch (err) {
     console.error('Profile load error:', err);
   }
+}
+
+// Function to sync quest buttons with database state
+function renderQuests(quests) {
+  if (!quests || !Array.isArray(quests)) return;
+
+  quests.forEach(q => {
+    const btn = document.querySelector(`[data-quest-id="${q.id}"]`) || document.getElementById(`quest-btn-${q.id}`);
+    if (btn) {
+      if (q.completed === 1) {
+        btn.disabled = true;
+        btn.innerText = '✅ Claimed!';
+        btn.style.background = '#334155';
+        btn.style.color = '#94a3b8';
+        btn.style.cursor = 'default';
+        btn.style.opacity = '0.7';
+      } else {
+        btn.disabled = false;
+        btn.innerText = `+${q.xp_reward} XP`;
+        btn.style.background = '';
+        btn.style.color = '';
+        btn.style.cursor = 'pointer';
+        btn.style.opacity = '1';
+      }
+    }
+  });
 }
 
 // Claim Multiple Quests with instant UI + Leaderboard update
@@ -726,23 +756,21 @@ async function claimQuest(questId, xpValue, btn) {
     });
 
     const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'Failed to claim');
+    if (!res.ok || !data.success) throw new Error(data.error || 'Failed to claim');
 
     if (btn) {
       btn.innerText = '✅ Claimed!';
       btn.style.background = '#334155';
       btn.style.color = '#94a3b8';
       btn.style.cursor = 'default';
+      btn.style.opacity = '0.7';
     }
 
-    // Instantly update XP bar, level, streak, and leaderboard rank
-    await loadDashboard();
-    if (typeof loadLeaderboard === 'function') {
-      await loadLeaderboard();
+    if (typeof loadDashboard === 'function') {
+      loadDashboard();
     }
   } catch (err) {
-    console.error('Quest claim error:', err);
-    alert('Could not claim XP: ' + err.message);
+    alert(err.message || 'Error claiming quest');
     if (btn) {
       btn.disabled = false;
       btn.innerText = `+${xpValue} XP`;
@@ -985,24 +1013,7 @@ window.startCamera = async function(type) {
       loadDashboard();
     }
 
-    // --- Daily Micro-Quest ---
-    async function completeDailyQuest(btn) {
-      try {
-        const res = await fetch('/api/profile/quest', { method: 'POST' });
-        const data = await res.json();
-      } catch (err) {
-        console.log('Quest processed offline');
-      }
-      if (btn) {
-        btn.disabled = true;
-        btn.innerText = '✅ Claimed!';
-        btn.style.opacity = '0.6';
-        btn.style.cursor = 'default';
-      }
-      loadDashboard();
-    }
-
-   // --- Camera Functions ---
+    // --- Camera Functions ---
     async function startCamera(type) {
       if (activeStream) activeStream.getTracks().forEach(track => track.stop());
       try {
