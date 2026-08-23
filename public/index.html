@@ -655,21 +655,37 @@ async function loadDashboard() {
     const xp = user.xp || 0;
     const streak = user.streak || 0;
     const multiplier = user.multiplier || 1.0;
-    const wasteKg = user.waste_kg || 0;
+    const wasteKg = parseFloat(user.waste_kg) || 0;
+    const co2Saved = user.co2_kg !== undefined ? user.co2_kg : Math.round(wasteKg * 2.5);
+    const waterSaved = user.water_l ? parseFloat(user.water_l) : Math.round(wasteKg * 120);
+
     const lvl = calculateLevel(xp);
     const badge = getStreakBadge(streak);
 
-    // Update Numerical Counters
+    // 1. Update Lifetime Environmental Impact Cards
+    const co2El = document.getElementById('co2Val');
+    const waterEl = document.getElementById('waterVal');
+    const wasteEl = document.getElementById('wasteVal');
+
+    if (co2El) co2El.innerText = co2Saved;
+    if (wasteEl) wasteEl.innerText = wasteKg;
+    if (waterEl) {
+      waterEl.innerText = waterSaved >= 1000 
+        ? `${(waterSaved / 1000).toFixed(1)}k` 
+        : `${waterSaved}`;
+    }
+
+    // 2. Update Numerical Counters
     if (document.getElementById('currXP')) document.getElementById('currXP').innerText = xp;
     if (document.getElementById('maxXP')) document.getElementById('maxXP').innerText = lvl.nextXP;
     if (document.getElementById('modalUserXp')) document.getElementById('modalUserXp').innerText = `${xp} XP`;
     if (document.getElementById('leaderboardXP')) document.getElementById('leaderboardXP').innerText = `${xp} XP`;
 
-    // Update Streak and Badges
+    // 3. Update Streak and Badges
     if (document.getElementById('streakCount')) document.getElementById('streakCount').innerText = streak;
     if (document.getElementById('modalStreak')) document.getElementById('modalStreak').innerText = `${badge.icon} ${streak} Days (${badge.title})`;
 
-    // Show Multiplier Boost if streak >= 3
+    // 4. Show Multiplier Boost if streak >= 3
     const boostEl = document.getElementById('streakBoostBadge');
     if (boostEl) {
       if (multiplier > 1.0) {
@@ -680,7 +696,7 @@ async function loadDashboard() {
       }
     }
 
-    // Dynamic Progress Bar & Level Titles
+    // 5. Dynamic Progress Bar & Level Titles
     if (document.getElementById('levelTitle')) document.getElementById('levelTitle').innerText = `Level ${lvl.level} - ${lvl.title}`;
     if (document.getElementById('sidebarRank')) document.getElementById('sidebarRank').innerText = lvl.title;
     if (document.getElementById('modalRankLabel')) document.getElementById('modalRankLabel').innerText = lvl.title;
@@ -689,11 +705,6 @@ async function loadDashboard() {
     if (xpBar) {
       xpBar.style.width = `${lvl.progressPercent}%`;
     }
-
-    // Update Tangible Impact Metrics
-    if (document.getElementById('phoneVal')) document.getElementById('phoneVal').innerText = Math.round(wasteKg * 45);
-    if (document.getElementById('savedWaterVal')) document.getElementById('savedWaterVal').innerText = `${Math.round(wasteKg * 120).toLocaleString()} L`;
-    if (document.getElementById('treeVal')) document.getElementById('treeVal').innerText = `${Math.round(wasteKg * 8)} hrs`;
 
   } catch (err) {
     console.error('Profile load error:', err);

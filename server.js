@@ -217,15 +217,22 @@ Return ONLY valid JSON.`;
       [lat, lng, location || `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`, `${severity} - ${description || 'Hotspot reported'}`],
       function (err) {
         if (err) return res.status(500).json({ error: err.message });
-        db.run('UPDATE profile SET xp = xp + 30 WHERE id = 1');
-        res.json({
-          id: this.lastID,
-          success: true,
-          severity,
-          complaintDraft,
-          lat,
-          lng
-        });
+        
+        // Award +30 XP, 3kg waste diverted, 8kg CO2 saved, and 300L water saved
+        db.run(
+          'UPDATE profile SET xp = xp + 30, waste_kg = waste_kg + 3, co2_kg = co2_kg + 8, water_l = CAST(COALESCE(water_l, 0) AS INTEGER) + 300 WHERE id = 1',
+          function (updateErr) {
+            if (updateErr) console.error('Profile update error:', updateErr);
+            res.json({
+              id: this.lastID,
+              success: true,
+              severity,
+              complaintDraft,
+              lat,
+              lng
+            });
+          }
+        );
       }
     );
   } catch (error) {
@@ -271,7 +278,7 @@ Do not include markdown fences or any other text outside the JSON.`;
 
     // Ensure database write completes before returning response to client
     db.run(
-      'UPDATE profile SET xp = xp + 25, waste_kg = waste_kg + 1 WHERE id = 1',
+      'UPDATE profile SET xp = xp + 25, waste_kg = waste_kg + 1, co2_kg = co2_kg + 3, water_l = CAST(COALESCE(water_l, 0) AS INTEGER) + 120 WHERE id = 1',
       function (err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json(parsedData);
@@ -331,22 +338,18 @@ Keep steps ultra-simple and focused on saving food from going to waste. Do not i
 
     const parsedRecipe = JSON.parse(rawText);
 
-    db.run('UPDATE profile SET xp = xp + 15 WHERE id = 1');
-    res.json(parsedRecipe);
+    db.run(
+      'UPDATE profile SET xp = xp + 20, waste_kg = waste_kg + 1, co2_kg = co2_kg + 2, water_l = CAST(COALESCE(water_l, 0) AS INTEGER) + 250 WHERE id = 1',
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(parsedRecipe);
+      }
+    );
   } catch (error) {
     console.error("Food Rescue Error:", error);
     res.status(500).json({ error: error.message || 'Failed to generate recipe' });
   }
 });
-
-// Complete a Daily Micro-Habit Quest
-app.post('/api/profile/quest', (req, res) => {
-  db.run('UPDATE profile SET xp = xp + 10, streak_days = streak_days + 1 WHERE id = 1', function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ success: true, message: 'Habit completed! +10 XP' });
-  });
-});
-
 // Update / Create Profile
 app.post('/api/profile/update', (req, res) => {
   const { name } = req.body;
@@ -407,11 +410,12 @@ app.get('/api/leaderboard', (req, res) => {
 app.post('/api/profile/quest', (req, res) => {
   const xpReward = parseInt(req.body.xp) || 15;
   db.run(
-    'UPDATE profile SET xp = xp + ?, streak_days = streak_days + 1 WHERE id = 1',
+    'UPDATE profile SET xp = xp + ?, streak = streak + 1 WHERE id = 1',
     [xpReward],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       db.get('SELECT * FROM profile WHERE id = 1', (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true, user: row, addedXp: xpReward });
       });
     }
