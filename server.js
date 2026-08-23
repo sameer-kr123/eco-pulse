@@ -65,13 +65,51 @@ db.serialize(() => {
     )
   `);
 });
+// Evaluate Streak Status, Expiration, and Multipliers
+function evaluateStreak(profile) {
+  if (!profile || !profile.last_active_date) {
+    return { streak: 0, multiplier: 1.0, diffDays: 999 };
+  }
 
+  const todayStr = new Date().toISOString().split('T')[0];
+  const lastDate = new Date(profile.last_active_date);
+  const today = new Date(todayStr);
+  const diffDays = Math.round((today - lastDate) / (1000 * 60 * 60 * 24));
+
+  let currentStreak = profile.streak || 0;
+
+  // Streak resets to 0 if more than 1 day missed
+  if (diffDays > 1) {
+    currentStreak = 0;
+  }
+
+  // Calculate XP Multiplier
+  let multiplier = 1.0;
+  if (currentStreak >= 14) multiplier = 2.0;
+  else if (currentStreak >= 7) multiplier = 1.5;
+  else if (currentStreak >= 3) multiplier = 1.2;
+
+  return { streak: currentStreak, multiplier, diffDays };
+}
 app.get('/api/dashboard', (req, res) => {
   db.get('SELECT * FROM profile WHERE id = 1', (err, user) => {
     if (err) return res.status(500).json({ error: err.message });
-    db.all('SELECT * FROM quests', (err, quests) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ user, quests });
+
+    const streakData = evaluateStreak(user);
+
+    // If streak expired while user was away, sync DB automatically
+    const updateStreak = (streakData.streak !== user?.streak)
+      ? new Promise((resolve) => db.run('UPDATE profile SET streak = ? WHERE id = 1', [streakData.streak], resolve))
+      : Promise.resolve();
+
+    updateStreak.then(() => {
+      db.all('SELECT * FROM quests', (err, quests) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({
+          user: { ...user, streak: streakData.streak, multiplier: streakData.multiplier },
+          quests
+        });
+      });
     });
   });
 });
@@ -83,41 +121,38 @@ app.post('/api/quests/toggle', (req, res) => {
 
   db.get('SELECT xp_reward FROM quests WHERE id = ?', [questId], (err, quest) => {
     if (err) return res.status(500).json({ error: err.message });
-    const xpReward = quest ? quest.xp_reward : (parseInt(req.body.xp, 10) || 15);
+    const rawXp = quest ? quest.xp_reward : (parseInt(req.body.xp, 10) || 15);
 
     db.get('SELECT xp, streak, last_active_date FROM profile WHERE id = 1', (err, profile) => {
       if (err) return res.status(500).json({ error: err.message });
 
       const todayStr = new Date().toISOString().split('T')[0];
-      let newStreak = profile?.streak || 0;
+      const streakData = evaluateStreak(profile);
+      let newStreak = streakData.streak;
 
       if (isDone) {
         if (!profile?.last_active_date) {
           newStreak = 1;
-        } else {
-          const lastDate = new Date(profile.last_active_date);
-          const today = new Date(todayStr);
-          const diffDays = Math.round((today - lastDate) / (1000 * 60 * 60 * 24));
-
-          if (diffDays === 1) {
-            newStreak += 1;
-          } else if (diffDays > 1) {
-            newStreak = 1;
-          }
+        } else if (streakData.diffDays === 1) {
+          newStreak += 1;
+        } else if (streakData.diffDays > 1) {
+          newStreak = 1;
         }
       }
 
-      const xpChange = isDone ? xpReward : -xpReward;
+      // Apply streak multiplier boost
+      const earnedXp = Math.round(rawXp * streakData.multiplier);
+      const xpChange = isDone ? earnedXp : -earnedXp;
 
       db.run(
         'UPDATE profile SET xp = MAX(0, xp + ?), streak = ?, last_active_date = ? WHERE id = 1',
         [xpChange, newStreak, todayStr],
-        function(updateErr) {
+        function (updateErr) {
           if (updateErr) return res.status(500).json({ error: updateErr.message });
-          
+
           db.get('SELECT * FROM profile WHERE id = 1', (fetchErr, updatedUser) => {
             if (fetchErr) return res.status(500).json({ error: fetchErr.message });
-            res.json({ success: true, user: updatedUser });
+            res.json({ success: true, user: updatedUser, earnedXp, multiplier: streakData.multiplier });
           });
         }
       );
@@ -197,71 +232,6 @@ Return ONLY valid JSON.`;
     console.error("Report Error:", error);
     res.status(500).json({ error: error.message || 'Failed to submit report' });
   }
-});// AI Community Waste Report (Auto-Drafting & Severity Analysis)
-app.post('/api/reports', async (req, res) => {
-  try {
-    const { lat, lng, location, description, imageBase64 } = req.body;
-    if (!lat || !lng) {
-      return res.status(400).json({ error: 'Missing location coordinates.' });
-    }
-
-    let severity = "Moderate Waste";
-    let complaintDraft = `Official Waste Clearance Request:\nLocation: ${location || 'Coordinates ' + lat + ', ' + lng}\nDetails: ${description || 'Illegal garbage accumulation reported.'}\nPlease take prompt action to clear this hotspot.`;
-
-    // If an image or description is provided, use Gemini to classify and draft an official complaint
-    if (imageBase64 || description) {
-      const prompt = `You are a municipal civic assistant. Analyze this reported garbage hotspot (Description: "${description || 'None'}") and generate a JSON response matching:
-{
-  "severity": "High Biohazard" | "Plastic Accumulation" | "Drainage Blockage" | "General Litter",
-  "complaint_draft": "A professional, polite 2-sentence complaint addressed to municipal sanitation authorities requesting quick clearance with the coordinates (${lat}, ${lng})."
-}
-Return ONLY valid JSON.`;
-
-      let parts = [prompt];
-      if (imageBase64) {
-        parts.push({
-          inlineData: {
-            data: imageBase64,
-            mimeType: "image/jpeg"
-          }
-        });
-      }
-
-      const result = await model.generateContent(parts);
-      const response = await result.response;
-      
-      let rawText = response.text().trim();
-      if (rawText.startsWith('```json')) {
-        rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-      } else if (rawText.startsWith('```')) {
-        rawText = rawText.replace(/```/g, '').trim();
-      }
-
-      const parsed = JSON.parse(rawText);
-      severity = parsed.severity || severity;
-      complaintDraft = parsed.complaint_draft || complaintDraft;
-    }
-
-    db.run(
-      'INSERT INTO reports (lat, lng, location, description) VALUES (?, ?, ?, ?)',
-      [lat, lng, location || `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`, `${severity} - ${description || 'Hotspot reported'}`],
-      function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        db.run('UPDATE profile SET xp = xp + 30 WHERE id = 1');
-        res.json({
-          id: this.lastID,
-          success: true,
-          severity,
-          complaintDraft,
-          lat,
-          lng
-        });
-      }
-    );
-  } catch (error) {
-    console.error("Report Error:", error);
-    res.status(500).json({ error: error.message || 'Failed to submit report' });
-  }
 });
 // AI Waste Scanner (Structured 3-Second Bin Output)
 app.post('/api/ai/scan-waste', async (req, res) => {
@@ -275,7 +245,7 @@ app.post('/api/ai/scan-waste', async (req, res) => {
   "bin_type": "Blue (Dry/Recycle)" | "Green (Organic/Wet)" | "Red (Hazardous/E-Waste)" | "Black (Landfill)",
   "bin_color": "blue" | "green" | "red" | "black",
   "prep_tip": "One short sentence on what to do before throwing (e.g., Rinse residue, crush flat, remove cap)",
-  "recyclable": true | false
+  "recyclable": true
 }
 Do not include markdown fences or any other text outside the JSON.`;
 
@@ -289,7 +259,7 @@ Do not include markdown fences or any other text outside the JSON.`;
     const result = await model.generateContent([prompt, imagePart]);
     const response = await result.response;
     
-    // Clean up potential markdown formatting in response text
+    // Clean up markdown formatting in response text
     let rawText = response.text().trim();
     if (rawText.startsWith('```json')) {
       rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -299,8 +269,14 @@ Do not include markdown fences or any other text outside the JSON.`;
 
     const parsedData = JSON.parse(rawText);
 
-    db.run('UPDATE profile SET xp = xp + 25, waste_kg = waste_kg + 1 WHERE id = 1');
-    res.json(parsedData);
+    // Ensure database write completes before returning response to client
+    db.run(
+      'UPDATE profile SET xp = xp + 25, waste_kg = waste_kg + 1 WHERE id = 1',
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(parsedData);
+      }
+    );
   } catch (error) {
     console.error("Waste Scan Error:", error);
     res.status(500).json({ error: error.message || 'Failed to analyze item' });

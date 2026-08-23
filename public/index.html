@@ -637,16 +637,27 @@ function calculateLevel(xp) {
   const progressPercent = Math.min(100, Math.max(0, Math.round(((xp - minXP) / (nextXP - minXP)) * 100)));
   return { level, title, minXP, nextXP, progressPercent };
 }
-
-// Refresh Dashboard & XP Progress Bar
+// Determine Streak Tier, Milestone Badges & Icons
+function getStreakBadge(streak) {
+  if (streak >= 30) return { title: '🏆 Eco Legend', icon: '👑', color: '#f59e0b' };
+  if (streak >= 14) return { title: '⚡ Habit Master', icon: '⚡', color: '#a855f7' };
+  if (streak >= 7) return { title: '🔥 Week Warrior', icon: '🔥', color: '#ef4444' };
+  if (streak >= 3) return { title: '✨ On Fire', icon: '✨', color: '#10b981' };
+  return { title: '🌱 Eco Sprout', icon: '🌱', color: '#64748b' };
+}
+// Dynamic Dashboard Loader
 async function loadDashboard() {
   try {
-    const res = await fetch('/api/profile');
-    const user = await res.json();
+    const res = await fetch('/api/dashboard');
+    const data = await res.json();
+    const user = data.user || {};
 
     const xp = user.xp || 0;
-    const streak = user.streak_days || 0;
+    const streak = user.streak || 0;
+    const multiplier = user.multiplier || 1.0;
+    const wasteKg = user.waste_kg || 0;
     const lvl = calculateLevel(xp);
+    const badge = getStreakBadge(streak);
 
     // Update Numerical Counters
     if (document.getElementById('currXP')) document.getElementById('currXP').innerText = xp;
@@ -654,11 +665,22 @@ async function loadDashboard() {
     if (document.getElementById('modalUserXp')) document.getElementById('modalUserXp').innerText = `${xp} XP`;
     if (document.getElementById('leaderboardXP')) document.getElementById('leaderboardXP').innerText = `${xp} XP`;
 
-    // Update Streak Counters
+    // Update Streak and Badges
     if (document.getElementById('streakCount')) document.getElementById('streakCount').innerText = streak;
-    if (document.getElementById('modalStreak')) document.getElementById('modalStreak').innerText = `🔥 ${streak} Days`;
+    if (document.getElementById('modalStreak')) document.getElementById('modalStreak').innerText = `${badge.icon} ${streak} Days (${badge.title})`;
 
-    // Update Titles and Progress Bar
+    // Show Multiplier Boost if streak >= 3
+    const boostEl = document.getElementById('streakBoostBadge');
+    if (boostEl) {
+      if (multiplier > 1.0) {
+        boostEl.style.display = 'inline-block';
+        boostEl.innerText = `🔥 ${multiplier}x XP Boost Active!`;
+      } else {
+        boostEl.style.display = 'none';
+      }
+    }
+
+    // Dynamic Progress Bar & Level Titles
     if (document.getElementById('levelTitle')) document.getElementById('levelTitle').innerText = `Level ${lvl.level} - ${lvl.title}`;
     if (document.getElementById('sidebarRank')) document.getElementById('sidebarRank').innerText = lvl.title;
     if (document.getElementById('modalRankLabel')) document.getElementById('modalRankLabel').innerText = lvl.title;
@@ -668,8 +690,13 @@ async function loadDashboard() {
       xpBar.style.width = `${lvl.progressPercent}%`;
     }
 
+    // Update Tangible Impact Metrics
+    if (document.getElementById('phoneVal')) document.getElementById('phoneVal').innerText = Math.round(wasteKg * 45);
+    if (document.getElementById('savedWaterVal')) document.getElementById('savedWaterVal').innerText = `${Math.round(wasteKg * 120).toLocaleString()} L`;
+    if (document.getElementById('treeVal')) document.getElementById('treeVal').innerText = `${Math.round(wasteKg * 8)} hrs`;
+
   } catch (err) {
-    console.error('Failed to load dashboard:', err);
+    console.error('Profile load error:', err);
   }
 }
 
