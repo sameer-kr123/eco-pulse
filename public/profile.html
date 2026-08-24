@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - EcoPulse</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 28px;
+        }
+
+        .logout-btn {
+            padding: 10px 20px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+
+        .profile-info {
+            margin-bottom: 30px;
+        }
+
+        .info-item {
+            margin-bottom: 20px;
+        }
+
+        .info-label {
+            color: #666;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            color: #333;
+            font-size: 16px;
+            padding: 10px 0;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        .section h2 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .save-btn {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .cancel-btn {
+            flex: 1;
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .cancel-btn:hover {
+            background: #d0d0d0;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .success {
+            color: #27ae60;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .loader {
+            display: inline-block;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>👤 My Profile</h1>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <!-- Profile Information -->
+        <div class="section">
+            <h2>Account Information</h2>
+            <div class="profile-info">
+                <div class="info-item">
+                    <div class="info-label">Name</div>
+                    <div class="info-value" id="displayName">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Email</div>
+                    <div class="info-value" id="displayEmail">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">City</div>
+                    <div class="info-value" id="displayCity">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Member Since</div>
+                    <div class="info-value" id="displayCreatedAt">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Profile -->
+        <div class="section">
+            <h2>Edit Profile</h2>
+            <form id="editProfileForm">
+                <div class="form-group">
+                    <label for="editName">Full Name</label>
+                    <input type="text" id="editName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="editCity">City</label>
+                    <input type="text" id="editCity" name="city" required>
+                </div>
+                <div class="form-group">
+                    <label for="editEmail">Email Address</label>
+                    <input type="email" id="editEmail" name="email" required>
+                </div>
+                <div class="button-group">
+                    <button type="submit" class="save-btn" id="editProfileBtn">Save Changes</button>
+                    <button type="button" class="cancel-btn" onclick="resetEditForm()">Cancel</button>
+                </div>
+                <div class="error" id="editProfileError"></div>
+                <div class="success" id="editProfileSuccess"></div>
+            </form>
+        </div>
+
+        <!-- Change Password -->
+        <div class="section">
+            <h2>Change Password</h2>
+            <form id="changePasswordForm">
+                <div class="form-group">
+                    <label for="currentPassword">Current Password</label>
+                    <input type="password" id="currentPassword" name="currentPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">New Password</label>
+                    <input type="password" id="newPassword" name="newPassword" placeholder="Min 8 characters" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirmNewPassword">Confirm New Password</label>
+                    <input type="password" id="confirmNewPassword" name="confirmNewPassword" required>
+                </div>
+                <div class="button-group">
+                    <button type="submit" class="save-btn" id="changePasswordBtn">Update Password</button>
+                    <button type="button" class="cancel-btn" onclick="resetPasswordForm()">Cancel</button>
+                </div>
+                <div class="error" id="passwordError"></div>
+                <div class="success" id="passwordSuccess"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Load user profile on page load
+        window.addEventListener('load', () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'signin.html';
+                return;
+            }
+            loadProfile();
+        });
+
+        async function loadProfile() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/auth/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load profile');
+                }
+
+                const user = await response.json();
+                displayProfile(user);
+                populateEditForm(user);
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                localStorage.clear();
+                window.location.href = 'signin.html';
+            }
+        }
+
+        function displayProfile(user) {
+            document.getElementById('displayName').textContent = user.name || '-';
+            document.getElementById('displayEmail').textContent = user.email || '-';
+            document.getElementById('displayCity').textContent = user.city || '-';
+            const createdDate = new Date(user.created_at).toLocaleDateString();
+            document.getElementById('displayCreatedAt').textContent = createdDate || '-';
+        }
+
+        function populateEditForm(user) {
+            document.getElementById('editName').value = user.name || '';
+            document.getElementById('editCity').value = user.city || '';
+            document.getElementById('editEmail').value = user.email || '';
+        }
+
+        // Edit Profile Form
+        document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearMessages('editProfile');
+
+            const name = document.getElementById('editName').value.trim();
+            const city = document.getElementById('editCity').value.trim();
+            const email = document.getElementById('editEmail').value.trim();
+
+            if (!name || !city || !email) {
+                showError('editProfileError', 'All fields are required');
+                return;
+            }
+
+            const btn = document.getElementById('editProfileBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loader"></span>Saving...';
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/auth/update-profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ name, city, email })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showSuccess('editProfileSuccess', 'Profile updated successfully!');
+                    loadProfile();
+                } else {
+                    showError('editProfileError', data.error || 'Failed to update profile');
+                }
+            } catch (error) {
+                showError('editProfileError', 'Network error. Please try again.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Save Changes';
+            }
+        });
+
+        // Change Password Form
+        document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearMessages('password');
+
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+
+            if (!currentPassword || !newPassword || !confirmNewPassword) {
+                showError('passwordError', 'All fields are required');
+                return;
+            }
+
+            if (newPassword.length < 8) {
+                showError('passwordError', 'New password must be at least 8 characters');
+                return;
+            }
+
+            if (newPassword !== confirmNewPassword) {
+                showError('passwordError', 'New passwords do not match');
+                return;
+            }
+
+            const btn = document.getElementById('changePasswordBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loader"></span>Updating...';
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/auth/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ currentPassword, newPassword })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showSuccess('passwordSuccess', 'Password updated successfully!');
+                    resetPasswordForm();
+                } else {
+                    showError('passwordError', data.error || 'Failed to update password');
+                }
+            } catch (error) {
+                showError('passwordError', 'Network error. Please try again.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Update Password';
+            }
+        });
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'signin.html';
+        }
+
+        function resetEditForm() {
+            loadProfile();
+            clearMessages('editProfile');
+        }
+
+        function resetPasswordForm() {
+            document.getElementById('changePasswordForm').reset();
+            clearMessages('password');
+        }
+
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+        }
+
+        function showSuccess(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+        }
+
+        function clearMessages(prefix) {
+            document.getElementById(prefix + 'Error').style.display = 'none';
+            document.getElementById(prefix + 'Success').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
