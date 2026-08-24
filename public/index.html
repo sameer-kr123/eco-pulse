@@ -7,27 +7,27 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 
   <style>
-    /* --- Red Back Button --- */
+ /* --- Red Back Button (Small) --- */
 .red-back-btn {
-  background: #ef4444; /* Vibrant Red */
+  background: #ef4444;
   color: #ffffff;
   border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 800;
+  padding: 6px 12px;         /* Reduced padding for a smaller size */
+  border-radius: 6px;        /* Slightly sharper corners */
+  font-size: 12px;           /* Smaller text size */
+  font-weight: 700;          
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+  gap: 4px;                  /* Tighter space between icon and text */
+  margin-bottom: 15px;       
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3); /* Softer shadow */
   transition: all 0.2s ease;
 }
 
 .red-back-btn:hover {
-  background: #dc2626; /* Darker red on hover */
-  transform: translateY(-2px);
+  background: #dc2626;
+  transform: translateY(-1px);
 }
   /* --- MOBILE SIDEBAR & PROFILE FIX --- */
 
@@ -640,7 +640,7 @@ body {
     <!-- TAB 2: WASTE SCANNER (UNIFIED) -->
     <div id="tab-waste-scanner" class="tab-view">
       <div style="max-width: 680px; margin: 0 auto;">
-        <button class="red-back-btn" onclick="returnToDashboard()">⬅ Back to Dashboard</button>
+        <button class="red-back-btn" onclick="returnToDashboard()">⬅ Back</button>
         <div style="text-align: center; margin-bottom: 20px;">
           <h2 style="font-size: 24px; font-weight: 800; display: inline-flex; align-items: center; gap: 8px;">
             ♻️ Smart Waste Classifier
@@ -721,7 +721,7 @@ body {
         <h3>🍎 Zero-Waste Food Rescue</h3>
         <p>Snap a picture of your fridge/leftovers or type them in to generate recipes.</p>
         
-        <button class="red-back-btn" onclick="returnToDashboard()">⬅ Back to Dashboard</button>
+        <button class="red-back-btn" onclick="returnToDashboard()">⬅ Back</button>
         <button class="btn-secondary" onclick="startCamera('food')">📷 Scan Leftovers with Camera</button>
         <div id="foodCameraBox" class="camera-box">
           <video id="foodVideo" autoplay playsinline></video>
@@ -740,7 +740,7 @@ body {
     <!-- ==================== TAB 4: WASTE REPORTS & MAP ==================== -->
 <div id="tab-waste-reports" class="tab-view">
   <div class="tool-box-card" style="max-width: 760px; margin: 0 auto; background: linear-gradient(145deg, #111a22, #0d141b); border: 1px solid var(--bg-card-border); border-radius: 20px; padding: 24px;">
-     <button class="red-back-btn" onclick="returnToDashboard()">⬅ Back to Dashboard</button>
+     <button class="red-back-btn" onclick="returnToDashboard()">⬅ Back</button>
     <!-- Tab Title -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <div>
@@ -782,7 +782,7 @@ body {
 <!-- Tab: Daily Challenges -->
 <div id="tab-challenges" class="tab-view" style="display: none;">
   <div style="max-width: 800px; margin: 0 auto; padding-top: 10px;">
-    <button class="red-back-btn" onclick="returnToDashboard()">⬅ Back to Dashboard</button>
+    <button class="red-back-btn" onclick="returnToDashboard()">⬅ Back</button>
     <!-- Top Banner -->
     <div style="background: #0c131a; border: 1px solid rgba(255,255,255,0.07); border-radius: 18px; padding: 22px 26px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center;">
       <div>
@@ -806,7 +806,7 @@ body {
 <!-- Tab: Leaderboard -->
 <div id="tab-leaderboard" class="tab-view" style="display: none;">
   <div style="max-width: 520px; margin: 0 auto; padding-top: 10px;">
-    <button class="red-back-btn" onclick="returnToDashboard()">⬅ Back to Dashboard</button>
+    <button class="red-back-btn" onclick="returnToDashboard()">⬅ Back</button>
     <div style="background: #081119; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
       
       <!-- Leaderboard Header & Tabs -->
