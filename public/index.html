@@ -631,7 +631,7 @@ body {
 
         <p style="font-size: 12px; color: var(--text-muted); margin: 8px 0;">Or type ingredients manually:</p>
         <input type="text" id="foodInput" placeholder="e.g. bread, leftover rice, carrots, milk" />
-        <button class="btn-action" onclick="rescueFoodText()">Generate Zero-Waste Recipe (+15 XP)</button>
+        <button class="btn-action" onclick="rescueFoodText()">Generate Zero-Waste Recipe (+30 XP)</button>
         <div id="foodResult" class="ai-output" style="display:none;"></div>
       </div>
     </div>
@@ -1765,70 +1765,118 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
     // --- AI Food Rescue ---
-    async function requestRecipe(payload) {
-      const resultBox = document.getElementById('foodResult');
-      resultBox.style.display = 'block';
+    // --- AI Food Rescue ---
+async function requestRecipe(payload) {
+  const resultBox = document.getElementById('foodResult');
+  const recipeBtn = document.querySelector('#tab-food-rescue button[onclick*="Recipe"], #generateRecipeBtn, .recipe-btn');
+
+  // 1. Immediately disable button & turn gray
+  if (recipeBtn) {
+    recipeBtn.disabled = true;
+    recipeBtn.style.background = '#334155';
+    recipeBtn.style.color = '#94a3b8';
+    recipeBtn.style.cursor = 'not-allowed';
+    recipeBtn.innerHTML = '⏳ Crafting Zero-Waste Recipe...';
+  }
+
+  if (resultBox) {
+    resultBox.style.display = 'block';
+    resultBox.className = 'ai-output';
+    resultBox.innerHTML = '🍳 <b>Chef Gemini is crafting a 15-minute zero-waste recipe...</b>';
+  }
+
+  try {
+    const res = await fetch('/api/ai/food-rescue', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (data && !data.error) {
+      // 2. Award +30 XP
+      addHunterXP(30);
+
+      // 3. Mark button as completed & disabled (gray)
+      if (recipeBtn) {
+        recipeBtn.disabled = true;
+        recipeBtn.style.background = '#1e293b';
+        recipeBtn.style.color = '#64748b';
+        recipeBtn.style.border = '1px solid #334155';
+        recipeBtn.style.cursor = 'not-allowed';
+        recipeBtn.innerHTML = '✓ Recipe Created (+30 XP Claimed)';
+      }
+
+      // 4. Show toast notification & complete challenge c2
+      if (typeof showXpGainToast === 'function') {
+        showXpGainToast('+30 XP Earned! 🥗 Food Waste Prevented');
+      }
+      if (typeof checkAndCompleteDailyChallenge === 'function') {
+        checkAndCompleteDailyChallenge('c2');
+      }
+
+      // 5. Render recipe card
+      resultBox.className = 'recipe-result-card';
+      resultBox.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="color:#4ade80; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">ZERO-WASTE RECIPE</span>
+          <span style="font-size:12px; color:#cbd5e1; background:rgba(255,255,255,0.06); padding:4px 10px; border-radius:999px;">⏱️ ${data.prep_time || '15 mins'} • ${data.difficulty || 'Easy'}</span>
+        </div>
+        <h2 style="font-size:22px; font-weight:800; margin:0 0 10px 0; color:#fff;">${data.recipe_name || data.title}</h2>
+        ${data.priority_item ? `<div class="prep-box" style="margin-bottom:12px; border-left:4px solid #f59e0b; background:rgba(245,158,11,0.08); padding:10px 14px; border-radius:8px;">🚨 <b>Eat-First Priority:</b> Use your <span style="text-decoration:underline;">${data.priority_item}</span> right away!</div>` : ''}
+        <div style="font-size:13px; color:#94a3b8; margin-bottom:8px;"><b>Ingredients Used:</b> ${data.ingredients_used ? data.ingredients_used.join(', ') : 'Pantry mix'}</div>
+        ${data.swap_tip ? `<div style="font-size:12px; color:#38bdf8; margin-bottom:12px;">🔄 <b>Swap Tip:</b> ${data.swap_tip}</div>` : ''}
+        <div style="font-size:14px; font-weight:800; margin-bottom:6px; color:#e2e8f0;">Instructions</div>
+        <ol style="margin:0 0 14px 0; padding-left:20px; font-size:13px; color:#cbd5e1; line-height:1.6;">
+          ${(data.instructions || []).map(step => `<li>${step}</li>`).join('')}
+        </ol>
+        <div style="text-align:right; font-size:12px; color:#22c55e; font-weight:800;">
+          ✨ +30 XP Earned for Reducing Food Waste!
+        </div>
+      `;
+    } else {
       resultBox.className = 'ai-output';
-      resultBox.innerHTML = '🍳 <b>Chef Gemini is crafting a 15-minute zero-waste recipe...</b>';
-
-      try {
-        const res = await fetch('/api/ai/food-rescue', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-
-        const stepsHtml = (data.instructions || []).map((step, idx) => `
-          <div class="recipe-step-item">
-            <b>${idx + 1}.</b> ${step.replace(/^Step \d+:\s*/i, '')}
-          </div>
-        `).join('');
-
-        const ingredientsList = (data.ingredients_used || []).join(', ');
-
-        resultBox.className = 'recipe-card';
-        resultBox.innerHTML = `
-          <div class="recipe-header">
-            <div>
-              <span style="font-size: 12px; text-transform: uppercase; color: var(--accent-emerald); font-weight: 800;">
-                Zero-Waste Recipe
-              </span>
-              <h2 style="font-size: 22px; font-weight: 800; margin: 4px 0 0 0;">${data.recipe_name}</h2>
-            </div>
-            <div class="recipe-meta-pill">
-              ⏱️ ${data.cook_time} • ${data.difficulty || 'Easy'}
-            </div>
-          </div>
-
-          ${data.eat_first_warning ? `
-            <div class="alert-eat-first">
-              🚨 <b>Eat-First Priority:</b> Use your <u>${data.eat_first_warning}</u> right away before it spoils!
-            </div>
-          ` : ''}
-
-          <div>
-            <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 6px;"><b>Ingredients Used:</b> ${ingredientsList}</div>
-            ${data.substitutions ? `<div style="font-size: 12.5px; color: #cbd5e1;">🔄 <i>Swap Tip: ${data.substitutions}</i></div>` : ''}
-          </div>
-
-          <div>
-            <h4 style="font-size: 15px; margin: 0 0 10px 0;">Instructions</h4>
-            ${stepsHtml}
-          </div>
-
-          <div style="font-size: 12px; color: var(--accent-emerald); font-weight: 700; text-align: right;">
-            ✨ +15 XP Earned for Reducing Food Waste!
-          </div>
-        `;
-        loadDashboard();
-      } catch (err) {
-        resultBox.className = 'ai-output';
-        resultBox.innerText = 'Error: ' + err.message;
+      resultBox.innerText = 'Error: ' + (data.error || 'Failed to generate recipe');
+      if (recipeBtn) {
+        recipeBtn.disabled = false;
+        recipeBtn.style.background = 'var(--accent-emerald, #22c55e)';
+        recipeBtn.style.color = '#000';
+        recipeBtn.style.cursor = 'pointer';
+        recipeBtn.innerHTML = 'Generate Zero-Waste Recipe (+30 XP)';
       }
     }
+  } catch (err) {
+    if (resultBox) {
+      resultBox.className = 'ai-output';
+      resultBox.innerText = 'Error: ' + err.message;
+    }
+    if (recipeBtn) {
+      recipeBtn.disabled = false;
+      recipeBtn.style.background = 'var(--accent-emerald, #22c55e)';
+      recipeBtn.style.color = '#000';
+      recipeBtn.style.cursor = 'pointer';
+      recipeBtn.innerHTML = 'Generate Zero-Waste Recipe (+30 XP)';
+    }
+  }
+}
+// Re-enable recipe button when ingredients input changes
+document.addEventListener('DOMContentLoaded', () => {
+  const ingInput = document.getElementById('ingredientsInput') || document.querySelector('#tab-food-rescue input');
+  if (ingInput) {
+    ingInput.addEventListener('input', () => {
+      const recipeBtn = document.querySelector('#tab-food-rescue button[onclick*="Recipe"], #generateRecipeBtn, .recipe-btn');
+      if (recipeBtn && recipeBtn.disabled) {
+        recipeBtn.disabled = false;
+        recipeBtn.style.background = 'var(--accent-emerald, #22c55e)';
+        recipeBtn.style.color = '#000';
+        recipeBtn.style.border = 'none';
+        recipeBtn.style.cursor = 'pointer';
+        recipeBtn.innerHTML = 'Generate Zero-Waste Recipe (+30 XP)';
+      }
+    });
+  }
+});
 
     function rescueFoodText() {
       const inputEl = document.getElementById('foodInput');
