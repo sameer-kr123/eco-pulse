@@ -206,37 +206,59 @@
   font-size: 12px;
   font-weight: 700;
 }
-    :root {
+:root {
   --bg-dark: #0a0f14;
+  --bg-surface: #0e151c;
   --bg-card: #111a22;
   --bg-card-border: #1e2c38;
+  --border-subtle: #1e2c38;
   --accent-hunter-green: #22c55e;
   --accent-hunter-glow: rgba(34, 197, 94, 0.25);
+  --accent-emerald: #22c55e;
+  --accent-teal: #10b981;
   --accent-amber: #f59e0b;
   --accent-blue: #3b82f6;
   --accent-purple: #a855f7;
   --accent-red: #ef4444;
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
+  --text-subtle: #64748b;
   --sidebar-w: 260px;
 }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg-base); color: var(--text-main); min-height: 100vh; display: flex; overflow-x: hidden; }
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #06090d;
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  display: flex;
+  min-height: 100vh;
+}
 
-    .sidebar { width: 270px; min-width: 270px; background: var(--bg-surface); border-right: 1px solid var(--border-subtle); padding: 28px 20px; display: flex; flex-direction: column; justify-content: space-between; height: 100vh; position: sticky; top: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    
+    .sidebar {
+  width: var(--sidebar-w);
+  background: #0a0f14;
+  border-right: 1px solid var(--bg-card-border);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
     .brand { font-size: 20px; font-weight: 800; color: var(--accent-emerald); display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
     .brand-icon { background: rgba(16, 185, 129, 0.15); padding: 8px; border-radius: 10px; }
     .nav-links { list-style: none; margin-top: 32px; }
-    .nav-item { padding: 12px 16px; border-radius: 12px; margin-bottom: 8px; color: var(--text-muted); font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s; font-size: 14px; user-select: none; }
-    .nav-item:hover { background: var(--bg-card); color: var(--text-main); }
-    .nav-item.active { background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.1)); color: var(--accent-emerald); border-left: 3px solid var(--accent-emerald); }
+    .nav-item { padding: 12px 16px; border-radius: 12px; margin-bottom: 8px; color: var(--text-muted); font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+    .nav-item:hover { background: rgba(255, 255, 255, 0.05); color: #fff; }
+    .nav-item.active { background: rgba(34, 197, 94, 0.15); color: var(--accent-hunter-green); border: 1px solid rgba(34, 197, 94, 0.35); }
     
     .user-profile-badge { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-subtle); cursor: pointer; transition: transform 0.15s ease; margin-top: auto; }
     .user-profile-badge:hover { transform: translateY(-2px); border-color: var(--accent-emerald); }
     .avatar { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, var(--accent-emerald), var(--accent-teal)); color: #000; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 15px; }
 
-    .main-content { flex: 1; padding: 36px 44px; overflow-y: auto; height: 100vh; }
+    .main-content { flex: 1; padding: 36px 44px; overflow-y: auto; height: 100vh; background-color: #06090d; }
     .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
     .header-row h1 { font-size: 28px; font-weight: 800; }
     .header-row p { color: var(--accent-teal); font-weight: 500; font-size: 14px; margin-top: 4px; }
@@ -323,6 +345,7 @@
         <li class="nav-item" onclick="switchTab('waste-scanner', this)">♻️ Waste Scanner</li>
         <li class="nav-item" onclick="switchTab('food-rescue', this)">🍎 Food Rescue</li>
         <li class="nav-item" onclick="switchTab('reports', this)">🏙️ Waste Reports & Map</li>
+        <li class="nav-item" onclick="switchTab('challenges')">🎯 Daily Challenges</li>
         <li class="nav-item" onclick="switchTab('leaderboard', this)">🎖️ Leaderboard</li>
       </ul>
     </div>
@@ -339,130 +362,123 @@
 
   <!-- Main View Area -->
   <main class="main-content">
-    <div class="header-row">
-      <div>
-        <h1 id="userName">Hi, Nikhil</h1>
-        <p>Tracking your ecological footprint & community achievements</p>
-      </div>
-      <div class="streak-pill" id="streakPill">🔥 <span id="streakCount">5</span> Day Streak</div>
-    </div>
 
-    <!-- WasteHunter 4-Card Hero Action Grid -->
-<div style="margin-top: 24px; margin-bottom: 24px;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-    <h3 style="margin: 0; font-size: 15px; font-weight: 800; letter-spacing: 0.5px; color: var(--text-main); text-transform: uppercase;">
-      ⚡ Quick Hunter Actions
-    </h3>
-    <span style="font-size: 11px; color: var(--accent-hunter-green); font-weight: 700;">Take Action • Earn XP</span>
-  </div>
-
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px;">
+  <!-- ==================== TAB 1: DASHBOARD ==================== -->
+  <div id="tab-dashboard" class="tab-view active-view">
     
-    <!-- 1. Scan Waste (+10 XP) -->
-    <div onclick="switchTab('scanner')" style="cursor: pointer; background: linear-gradient(145deg, #13221a, #0d1612); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: 16px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 20px rgba(34,197,94,0.2)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';">
-      <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(34, 197, 94, 0.15); display: flex; align-items: center; justify-content: center; font-size: 24px;">
-        📸
+    <!-- Header Row -->
+    <div class="header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+      <div>
+        <h1 id="welcomeUser" style="font-size: 28px; font-weight: 900; margin: 0; color: #fff;">Hi, Hunter</h1>
+        <p style="color: var(--accent-hunter-green); font-size: 13px; font-weight: 600; margin: 4px 0 0 0;">
+          Spot waste. Take action. Level up. Save Earth.
+        </p>
       </div>
-      <div style="font-size: 13px; font-weight: 800; color: #fff; line-height: 1.2;">SCAN WASTE</div>
-      <span style="font-size: 11px; font-weight: 800; color: #22c55e; background: rgba(34, 197, 94, 0.15); padding: 3px 8px; border-radius: 6px;">+10 XP</span>
-    </div>
-
-    <!-- 2. Reduce Food Spoilage (+30 XP) -->
-    <div onclick="switchTab('food')" style="cursor: pointer; background: linear-gradient(145deg, #251b11, #161009); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 16px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 20px rgba(245,158,11,0.2)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';">
-      <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center; font-size: 24px;">
-        🍎
+      <div id="streakPill" class="streak-pill" style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 800; color: #f59e0b;">
+        🔥 <span id="streakCount">0</span> Day Streak
       </div>
-      <div style="font-size: 13px; font-weight: 800; color: #fff; line-height: 1.2;">REDUCE FOOD SPOILAGE</div>
-      <span style="font-size: 11px; font-weight: 800; color: #f59e0b; background: rgba(245, 158, 11, 0.15); padding: 3px 8px; border-radius: 6px;">+30 XP</span>
     </div>
 
-    <!-- 3. Report Waste (+50 XP) -->
-    <div onclick="switchTab('reports')" style="cursor: pointer; background: linear-gradient(145deg, #131c29, #0a111a); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 16px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 20px rgba(59,130,246,0.2)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';">
-      <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center; font-size: 24px;">
-        📍
+    <!-- Quick Hunter Actions Grid -->
+    <div style="margin-top: 20px; margin-bottom: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="margin: 0; font-size: 14px; font-weight: 800; letter-spacing: 0.5px; color: var(--text-main); text-transform: uppercase;">
+          ⚡ Quick Hunter Actions
+        </h3>
+        <span style="font-size: 11px; color: var(--accent-hunter-green); font-weight: 700;">Take Action • Earn XP</span>
       </div>
-      <div style="font-size: 13px; font-weight: 800; color: #fff; line-height: 1.2;">REPORT IN LOCALITY</div>
-      <span style="font-size: 11px; font-weight: 800; color: #3b82f6; background: rgba(59, 130, 246, 0.15); padding: 3px 8px; border-radius: 6px;">+50 XP</span>
-    </div>
 
-    <!-- 4. Daily Challenge (+100 XP) -->
-    <div onclick="document.getElementById('questsListContainer')?.scrollIntoView({ behavior: 'smooth' })" style="cursor: pointer; background: linear-gradient(145deg, #22122b, #15091c); border: 1px solid rgba(168, 85, 247, 0.35); border-radius: 16px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 20px rgba(168,85,247,0.2)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';">
-      <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(168, 85, 247, 0.15); display: flex; align-items: center; justify-content: center; font-size: 24px;">
-        🎯
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px;">
+        <!-- 1. Scan Waste (+10 XP) -->
+        <div onclick="switchTab('scanner')" style="cursor: pointer; background: linear-gradient(145deg, #13221a, #0d1612); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: 16px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;">
+          <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(34, 197, 94, 0.15); display: flex; align-items: center; justify-content: center; font-size: 24px;">📸</div>
+          <div style="font-size: 13px; font-weight: 800; color: #fff; line-height: 1.2;">SCAN WASTE</div>
+          <span style="font-size: 11px; font-weight: 800; color: #22c55e; background: rgba(34, 197, 94, 0.15); padding: 3px 8px; border-radius: 6px;">+10 XP</span>
+        </div>
+
+        <!-- 2. Reduce Food Spoilage (+30 XP) -->
+        <div onclick="switchTab('food')" style="cursor: pointer; background: linear-gradient(145deg, #251b11, #161009); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 16px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;">
+          <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center; font-size: 24px;">🍎</div>
+          <div style="font-size: 13px; font-weight: 800; color: #fff; line-height: 1.2;">REDUCE FOOD SPOILAGE</div>
+          <span style="font-size: 11px; font-weight: 800; color: #f59e0b; background: rgba(245, 158, 11, 0.15); padding: 3px 8px; border-radius: 6px;">+30 XP</span>
+        </div>
+
+        <!-- 3. Report Waste (+50 XP) -->
+        <div onclick="switchTab('reports')" style="cursor: pointer; background: linear-gradient(145deg, #131c29, #0a111a); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 16px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;">
+          <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center; font-size: 24px;">📍</div>
+          <div style="font-size: 13px; font-weight: 800; color: #fff; line-height: 1.2;">REPORT IN LOCALITY</div>
+          <span style="font-size: 11px; font-weight: 800; color: #3b82f6; background: rgba(59, 130, 246, 0.15); padding: 3px 8px; border-radius: 6px;">+50 XP</span>
+        </div>
+
+        <!-- 4. Daily Challenge (+100 XP) -->
+        <div onclick="switchTab('challenges')" style="cursor: pointer; background: linear-gradient(145deg, #22122b, #15091c); border: 1px solid rgba(168, 85, 247, 0.35); border-radius: 16px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;">
+          <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(168, 85, 247, 0.15); display: flex; align-items: center; justify-content: center; font-size: 24px;">🎯</div>
+          <div style="font-size: 13px; font-weight: 800; color: #fff; line-height: 1.2;">DAILY CHALLENGE</div>
+          <span style="font-size: 11px; font-weight: 800; color: #a855f7; background: rgba(168, 85, 247, 0.15); padding: 3px 8px; border-radius: 6px;">+100 XP</span>
+        </div>
       </div>
-      <div style="font-size: 13px; font-weight: 800; color: #fff; line-height: 1.2;">DAILY CHALLENGE</div>
-      <span style="font-size: 11px; font-weight: 800; color: #a855f7; background: rgba(168, 85, 247, 0.15); padding: 3px 8px; border-radius: 6px;">+100 XP</span>
     </div>
 
-  </div>
-</div>
-<!-- 7-Day Streak Tracker with Mystery Gift Box -->
-<div class="card" style="margin-top: 18px; margin-bottom: 20px; background: linear-gradient(145deg, #111a22, #0d141b); border: 1px solid var(--bg-card-border); border-radius: 16px; padding: 18px 20px;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <span style="font-size: 18px;">🔥</span>
-      <span style="font-size: 14px; font-weight: 800; color: #fff; letter-spacing: 0.5px; text-transform: uppercase;">
-        <span id="streakCountNumber">0</span> Day Streak
-      </span>
-    </div>
-    <span style="font-size: 11px; font-weight: 700; color: #f59e0b; background: rgba(245, 158, 11, 0.15); padding: 4px 8px; border-radius: 6px;">
-      Streak Goal: 7 Days
-    </span>
-  </div>
+    <!-- 7-Day Streak Tracker -->
+    <div class="card" style="margin-top: 18px; margin-bottom: 20px; background: linear-gradient(145deg, #111a22, #0d141b); border: 1px solid var(--bg-card-border); border-radius: 16px; padding: 18px 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 18px;">🔥</span>
+          <span style="font-size: 14px; font-weight: 800; color: #fff; letter-spacing: 0.5px; text-transform: uppercase;">
+            <span id="streakCountNumber">0</span> Day Streak
+          </span>
+        </div>
+        <span style="font-size: 11px; font-weight: 700; color: #f59e0b; background: rgba(245, 158, 11, 0.15); padding: 4px 8px; border-radius: 6px;">
+          Streak Goal: 7 Days
+        </span>
+      </div>
 
-  <!-- 7-Day Dots Chain -->
-  <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
-    <div class="streak-day" id="day-dot-1" style="width: 34px; height: 34px; border-radius: 50%; background: #1e293b; border: 2px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #64748b;">1</div>
-    <div class="streak-day" id="day-dot-2" style="width: 34px; height: 34px; border-radius: 50%; background: #1e293b; border: 2px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #64748b;">2</div>
-    <div class="streak-day" id="day-dot-3" style="width: 34px; height: 34px; border-radius: 50%; background: #1e293b; border: 2px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #64748b;">3</div>
-    <div class="streak-day" id="day-dot-4" style="width: 34px; height: 34px; border-radius: 50%; background: #1e293b; border: 2px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #64748b;">4</div>
-    <div class="streak-day" id="day-dot-5" style="width: 34px; height: 34px; border-radius: 50%; background: #1e293b; border: 2px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #64748b;">5</div>
-    <div class="streak-day" id="day-dot-6" style="width: 34px; height: 34px; border-radius: 50%; background: #1e293b; border: 2px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #64748b;">6</div>
-    <div class="streak-day" id="day-dot-7" style="width: 38px; height: 38px; border-radius: 12px; background: rgba(245, 158, 11, 0.15); border: 2px solid #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); cursor: pointer;" title="Day 7 Mystery Box Reward!">🎁</div>
-  </div>
-</div>
-
-<!-- 1.5A: Badges & Achievements Shelf -->
-<div class="card" style="margin-top: 18px; margin-bottom: 24px; background: linear-gradient(145deg, #111a22, #0d141b); border: 1px solid var(--bg-card-border); border-radius: 16px; padding: 18px 20px;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-    <h3 style="margin: 0; font-size: 14px; font-weight: 800; letter-spacing: 0.5px; color: #fff; text-transform: uppercase;">
-      🏅 Badges & Achievements
-    </h3>
-    <span style="font-size: 11px; color: var(--accent-hunter-green); font-weight: 700;">Unlocked Trophies</span>
-  </div>
-
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(68px, 1fr)); gap: 10px; text-align: center;">
-    <!-- Badge 1: First Scan -->
-    <div id="badge-first-scan" style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px; border-radius: 12px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3);">
-      <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(34, 197, 94, 0.2); display: flex; align-items: center; justify-content: center; font-size: 18px;">♻️</div>
-      <span style="font-size: 10px; font-weight: 700; color: #fff; line-height: 1.1;">First Scan</span>
+      <!-- 7-Day Dots Chain -->
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+        <div class="streak-day" id="day-dot-1" style="width: 34px; height: 34px; border-radius: 50%; background: #1e293b; border: 2px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #64748b;">1</div>
+        <div class="streak-day" id="day-dot-2" style="width: 34px; height: 34px; border-radius: 50%; background: #1e293b; border: 2px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #64748b;">2</div>
+        <div class="streak-day" id="day-dot-3" style="width: 34px; height: 34px; border-radius: 50%; background: #1e293b; border: 2px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #64748b;">3</div>
+        <div class="streak-day" id="day-dot-4" style="width: 34px; height: 34px; border-radius: 50%; background: #1e293b; border: 2px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #64748b;">4</div>
+        <div class="streak-day" id="day-dot-5" style="width: 34px; height: 34px; border-radius: 50%; background: #1e293b; border: 2px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #64748b;">5</div>
+        <div class="streak-day" id="day-dot-6" style="width: 34px; height: 34px; border-radius: 50%; background: #1e293b; border: 2px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #64748b;">6</div>
+        <div class="streak-day" id="day-dot-7" style="width: 38px; height: 38px; border-radius: 12px; background: rgba(245, 158, 11, 0.15); border: 2px solid #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); cursor: pointer;" title="Day 7 Mystery Box Reward!">🎁</div>
+      </div>
     </div>
 
-    <!-- Badge 2: Food Saver -->
-    <div id="badge-food-saver" style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px; border-radius: 12px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3);">
-      <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(245, 158, 11, 0.2); display: flex; align-items: center; justify-content: center; font-size: 18px;">🍎</div>
-      <span style="font-size: 10px; font-weight: 700; color: #fff; line-height: 1.1;">Food Saver</span>
+    <!-- Badges & Achievements Shelf -->
+    <div class="card" style="margin-top: 18px; margin-bottom: 24px; background: linear-gradient(145deg, #111a22, #0d141b); border: 1px solid var(--bg-card-border); border-radius: 16px; padding: 18px 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="margin: 0; font-size: 14px; font-weight: 800; letter-spacing: 0.5px; color: #fff; text-transform: uppercase;">
+          🏅 Badges & Achievements
+        </h3>
+        <span style="font-size: 11px; color: var(--accent-hunter-green); font-weight: 700;">Unlocked Trophies</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(68px, 1fr)); gap: 10px; text-align: center;">
+        <div id="badge-first-scan" style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px; border-radius: 12px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3);">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(34, 197, 94, 0.2); display: flex; align-items: center; justify-content: center; font-size: 18px;">♻️</div>
+          <span style="font-size: 10px; font-weight: 700; color: #fff; line-height: 1.1;">First Scan</span>
+        </div>
+        <div id="badge-food-saver" style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px; border-radius: 12px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3);">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(245, 158, 11, 0.2); display: flex; align-items: center; justify-content: center; font-size: 18px;">🍎</div>
+          <span style="font-size: 10px; font-weight: 700; color: #fff; line-height: 1.1;">Food Saver</span>
+        </div>
+        <div id="badge-reporter" style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px; border-radius: 12px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; font-size: 18px;">🛡️</div>
+          <span style="font-size: 10px; font-weight: 700; color: #fff; line-height: 1.1;">Reporter</span>
+        </div>
+        <div id="badge-streak-master" style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px; border-radius: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(239, 68, 68, 0.2); display: flex; align-items: center; justify-content: center; font-size: 18px;">🔥</div>
+          <span style="font-size: 10px; font-weight: 700; color: #fff; line-height: 1.1;">Streak Master</span>
+        </div>
+        <div id="badge-waste-warrior" style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px; border-radius: 12px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3);">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(168, 85, 247, 0.2); display: flex; align-items: center; justify-content: center; font-size: 18px;">⭐</div>
+          <span style="font-size: 10px; font-weight: 700; color: #fff; line-height: 1.1;">Waste Warrior</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Badge 3: Reporter -->
-    <div id="badge-reporter" style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px; border-radius: 12px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);">
-      <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; font-size: 18px;">🛡️</div>
-      <span style="font-size: 10px; font-weight: 700; color: #fff; line-height: 1.1;">Reporter</span>
-    </div>
-
-    <!-- Badge 4: Streak Master -->
-    <div id="badge-streak-master" style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px; border-radius: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);">
-      <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(239, 68, 68, 0.2); display: flex; align-items: center; justify-content: center; font-size: 18px;">🔥</div>
-      <span style="font-size: 10px; font-weight: 700; color: #fff; line-height: 1.1;">Streak Master</span>
-    </div>
-
-    <!-- Badge 5: Waste Warrior -->
-    <div id="badge-waste-warrior" style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px; border-radius: 12px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3);">
-      <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(168, 85, 247, 0.2); display: flex; align-items: center; justify-content: center; font-size: 18px;">⭐</div>
-      <span style="font-size: 10px; font-weight: 700; color: #fff; line-height: 1.1;">Waste Warrior</span>
-    </div>
-  </div>
-</div>
+  </div> <!-- End of tab-dashboard -->
 
     <!-- TAB 2: WASTE SCANNER (REDESIGNED) -->
     <!-- TAB 2: WASTE SCANNER (UNIFIED) -->
@@ -564,17 +580,65 @@
     </div>
 
     <!-- TAB 4: COMMUNITY REPORTS -->
-    <div id="tab-reports" class="tab-view">
-      <div class="tool-box-card">
-        <h3>🏙️ Geotagged Waste Reporting & Live Pins</h3>
-        <p>Click the map below to choose a waste location, or inspect existing reported pins.</p>
-        <div id="map"></div>
-        <input type="text" id="reportLocation" placeholder="Click the map above to select GPS coordinates" />
-        <textarea id="reportDesc" rows="3" placeholder="Describe the hotspot (e.g. Unattended plastic pile near market)"></textarea>
-        <button class="btn-action" onclick="submitReport()">Save Report & Pin (+30 XP)</button>
-        <div id="reportResult" class="ai-output" style="display:none;"></div>
+    <!-- ==================== TAB 4: WASTE REPORTS & MAP ==================== -->
+<div id="tab-waste-reports" class="tab-view">
+  <div class="tool-box-card" style="max-width: 760px; margin: 0 auto; background: linear-gradient(145deg, #111a22, #0d141b); border: 1px solid var(--bg-card-border); border-radius: 20px; padding: 24px;">
+    
+    <!-- Tab Title -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div>
+        <h3 style="margin: 0; font-size: 20px; font-weight: 900; color: #fff;">📍 LOCALITY WASTE REPORT</h3>
+        <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-muted);">Pin dump spots, notify cleanup crews, and earn 50 XP</p>
       </div>
+      <span style="font-size: 11px; background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); font-weight: 800; padding: 5px 10px; border-radius: 20px;">+50 XP</span>
     </div>
+
+    <!-- Leaflet Interactive Map -->
+    <div style="margin-bottom: 18px;">
+      <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px;">
+        1. TAP MAP TO SELECT GPS PIN:
+      </label>
+      <div id="map" style="width: 100%; height: 320px; border-radius: 14px; border: 1px solid #1e2c38; overflow: hidden; background: #0a0f14; z-index: 1;"></div>
+    </div>
+
+    <!-- Form Inputs -->
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div>
+        <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">LOCATION / LANDMARK:</label>
+        <input type="text" id="reportLocation" placeholder="e.g. Near Metro Pillar 142 or click map" style="width: 100%; box-sizing: border-box; background: #06090d; border: 1px solid #1e2c38; border-radius: 10px; padding: 12px; color: #fff; font-size: 13px; outline: none;" />
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">ISSUE DESCRIPTION:</label>
+        <textarea id="reportDesc" rows="3" placeholder="Describe the garbage pile, overflow, or hazards..." style="width: 100%; box-sizing: border-box; background: #06090d; border: 1px solid #1e2c38; border-radius: 10px; padding: 12px; color: #fff; font-size: 13px; outline: none; resize: vertical;"></textarea>
+      </div>
+
+      <button onclick="submitReport()" style="width: 100%; padding: 14px; border-radius: 12px; background: #3b82f6; color: #fff; border: none; font-weight: 800; font-size: 14px; cursor: pointer; transition: 0.2s;">
+        🚀 Submit & Generate Complaint (+50 XP)
+      </button>
+
+      <div id="reportResult" style="display: none; padding: 14px; border-radius: 12px; background: rgba(19, 28, 38, 0.9); border: 1px solid #1e2c38;"></div>
+    </div>
+
+  </div>
+</div>
+    <!-- ==================== TAB: DAILY CHALLENGES ==================== -->
+<div id="tab-challenges" class="tab-view">
+  <div class="tool-box-card" style="max-width: 680px; margin: 0 auto; background: linear-gradient(145deg, #111a22, #0d141b); border: 1px solid var(--bg-card-border); border-radius: 20px; padding: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div>
+        <h3 style="margin: 0; font-size: 20px; font-weight: 900; color: #fff;">🎯 DAILY ECO CHALLENGES</h3>
+        <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-muted);">Complete daily missions to earn massive XP and maintain streaks</p>
+      </div>
+      <span style="font-size: 11px; background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); font-weight: 800; padding: 5px 10px; border-radius: 20px;">+100 XP BOOST</span>
+    </div>
+
+    <!-- Missions container -->
+    <div id="questsListContainer" style="display: flex; flex-direction: column; gap: 12px;">
+      <!-- Populated dynamically by renderQuests() -->
+    </div>
+  </div>
+</div>
 
     <!-- TAB 5: DYNAMIC LEADERBOARD -->
 <div id="tab-leaderboard" class="tab-view">
@@ -1172,31 +1236,66 @@ window.startCamera = async function(type) {
     }
 
     // --- Navigation & Tab Switching ---
-    function switchTab(tabName, navElement) {
-  if (activeStream) {
-    activeStream.getTracks().forEach(track => track.stop());
-    activeStream = null;
+   function switchTab(tabId) {
+  // Map shortcuts to tab container IDs
+  const tabMap = {
+    'dashboard': 'tab-dashboard',
+    'scanner': 'tab-waste-scanner',
+    'waste-scanner': 'tab-waste-scanner',
+    'food': 'tab-food-rescue',
+    'food-rescue': 'tab-food-rescue',
+    'reports': 'tab-waste-reports',
+    'waste-reports': 'tab-waste-reports',
+    'challenges': 'tab-challenges',
+    'leaderboard': 'tab-leaderboard'
+  };
+
+  const targetId = tabMap[tabId] || `tab-${tabId}`;
+
+  // Hide all tab-views
+  document.querySelectorAll('.tab-view').forEach(el => {
+    el.classList.remove('active-view');
+    el.style.display = 'none';
+  });
+
+  // Show the selected tab
+  const targetTab = document.getElementById(targetId);
+  if (targetTab) {
+    targetTab.classList.add('active-view');
+    targetTab.style.display = 'block';
   }
-  document.querySelectorAll('.camera-box').forEach(b => b.style.display = 'none');
-  document.querySelectorAll('.tab-view').forEach(tab => tab.classList.remove('active-view'));
-  
-  const target = document.getElementById('tab-' + tabName);
-  if (target) target.classList.add('active-view');
 
-  document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-  if (navElement) {
-    navElement.classList.add('active');
-  } else {
-    const matchingNav = Array.from(document.querySelectorAll('.nav-item')).find(el => el.getAttribute('onclick')?.includes(tabName));
-    if (matchingNav) matchingNav.classList.add('active');
+  // Update active sidebar indicator
+  const navItems = document.querySelectorAll('.nav-links .nav-item');
+  const tabIndexMap = {
+    'dashboard': 0,
+    'scanner': 1,
+    'waste-scanner': 1,
+    'food': 2,
+    'food-rescue': 2,
+    'reports': 3,
+    'waste-reports': 3,
+    'challenges': 4,
+    'leaderboard': 5
+  };
+
+  navItems.forEach(el => el.classList.remove('active'));
+  const activeIdx = tabIndexMap[tabId];
+  if (activeIdx !== undefined && navItems[activeIdx]) {
+    navItems[activeIdx].classList.add('active');
   }
 
-  // Refresh data dynamically based on the active tab
-  if (tabName === 'leaderboard') loadLeaderboard();
-  if (tabName === 'dashboard') loadDashboard();
-  if (tabName === 'reports') setTimeout(initMap, 200);
-
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+ // Leaflet map initialization & resize trigger
+  if (tabId === 'reports' || tabId === 'waste-reports') {
+    setTimeout(() => {
+      if (typeof initMap === 'function') {
+        initMap();
+      }
+      if (typeof map !== 'undefined' && map) {
+        map.invalidateSize();
+      }
+    }, 150);
+  }
 }
 
     function goToDashboard() {
