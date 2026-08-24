@@ -897,6 +897,50 @@ function addHunterXP(points) {
   updateHeroUI();
   renderLeaderboard();
 }
+// Floating XP feedback banner
+function showXpGainToast(text) {
+  let toast = document.getElementById('xpToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'xpToast';
+    toast.style.position = 'fixed';
+    toast.style.bottom = '24px';
+    toast.style.right = '24px';
+    toast.style.background = 'linear-gradient(135deg, #15803d, #22c55e)';
+    toast.style.color = '#000';
+    toast.style.fontWeight = '900';
+    toast.style.fontSize = '14px';
+    toast.style.padding = '12px 20px';
+    toast.style.borderRadius = '12px';
+    toast.style.boxShadow = '0 10px 25px rgba(34, 197, 94, 0.4)';
+    toast.style.zIndex = '99999';
+    toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(15px)';
+    document.body.appendChild(toast);
+  }
+
+  toast.innerText = text;
+  toast.style.opacity = '1';
+  toast.style.transform = 'translateY(0)';
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(15px)';
+  }, 2600);
+}
+
+// Automatically mark challenge complete if scanner is used
+function checkAndCompleteDailyChallenge(challengeId) {
+  let saved = localStorage.getItem('daily_challenges');
+  let challenges = saved ? JSON.parse(saved) : DAILY_CHALLENGES;
+  const match = challenges.find(c => c.id === challengeId);
+  if (match && !match.claimed) {
+    match.claimed = true;
+    localStorage.setItem('daily_challenges', JSON.stringify(challenges));
+    renderDailyChallenges();
+  }
+}
 
 function renderLeaderboard(filter = 'global') {
   const container = document.getElementById('leaderboardList');
@@ -1297,43 +1341,6 @@ function renderQuests(quests) {
   });
 }
 
-// Claim Multiple Quests with instant UI + Leaderboard update
-async function claimQuest(questId, xpValue, btn) {
-  if (btn) {
-    btn.disabled = true;
-    btn.innerText = '⏳ Claiming...';
-  }
-
-  try {
-    const res = await fetch('/api/quests/toggle', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questId: questId, completed: true, xp: xpValue })
-    });
-
-    const data = await res.json();
-    if (!res.ok || !data.success) throw new Error(data.error || 'Failed to claim');
-
-    if (btn) {
-      btn.innerText = '✅ Claimed!';
-      btn.style.background = '#334155';
-      btn.style.color = '#94a3b8';
-      btn.style.cursor = 'default';
-      btn.style.opacity = '0.7';
-    }
-
-    if (typeof loadDashboard === 'function') {
-      loadDashboard();
-    }
-  } catch (err) {
-    alert(err.message || 'Error claiming quest');
-    if (btn) {
-      btn.disabled = false;
-      btn.innerText = `+${xpValue} XP`;
-    }
-  }
-}
-
 // Load live dynamic leaderboard ranking with levels
 async function loadLeaderboard() {
   const container = document.getElementById('leaderboardList');
@@ -1638,43 +1645,100 @@ window.startCamera = async function(type) {
 
     // --- AI Waste Scanner ---
     async function sendWasteScan(imageBase64) {
-      const resultBox = document.getElementById('scannerResult');
-      resultBox.style.display = 'block';
-      resultBox.className = 'ai-output';
-      resultBox.innerHTML = '⚡ <b>Analyzing material in 3 seconds...</b>';
+  const resultBox = document.getElementById('scannerResult');
+  
+  // 1. Grab classify buttons & immediately turn gray / disable
+  const classifyButtons = document.querySelectorAll('#tab-waste-scanner button, .classify-btn');
+  classifyButtons.forEach(btn => {
+    btn.disabled = true;
+    btn.style.background = '#334155';
+    btn.style.color = '#94a3b8';
+    btn.style.cursor = 'not-allowed';
+    btn.innerHTML = '⏳ Classifying AI Analysis...';
+  });
 
-      try {
-        const res = await fetch('/api/ai/scan-waste', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageBase64 })
-        });
-        
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
+  if (resultBox) {
+    resultBox.style.display = 'block';
+    resultBox.className = 'ai-output';
+    resultBox.innerHTML = '⚡ <b>Analyzing material in 3 seconds...</b>';
+  }
 
-        resultBox.className = `bin-result-card bin-${data.bin_color || 'blue'}`;
-        resultBox.innerHTML = `
-          <div class="bin-badge">🗑️ ${data.bin_type}</div>
-          <div>
-            <h2 style="font-size: 20px; font-weight: 800; margin: 4px 0;">${data.item_name}</h2>
-            <span style="font-size: 13px; color: var(--text-muted);">
-              Recyclable: <b>${data.recyclable ? '✅ Yes' : '❌ No'}</b>
-            </span>
-          </div>
-          <div class="prep-box">
-            💡 <b>3-Second Prep Tip:</b> ${data.prep_tip}
-          </div>
-          <div style="font-size: 12px; color: var(--accent-emerald); font-weight: 700;">
-            ✨ +25 XP & +1kg Waste Diverted!
-          </div>
-        `;
-        loadDashboard();
-      } catch (err) {
-        resultBox.className = 'ai-output';
-        resultBox.innerText = 'Error: ' + err.message;
+  try {
+    const res = await fetch('/api/ai/scan-waste', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64 })
+    });
+
+    const data = await res.json();
+
+    if (data && !data.error) {
+      // 2. Award +25 Hunter XP & refresh UI
+      addHunterXP(25);
+
+      // 3. Keep button grayed out & marked as claimed
+      classifyButtons.forEach(btn => {
+        btn.disabled = true;
+        btn.style.background = '#1e293b';
+        btn.style.color = '#64748b';
+        btn.style.border = '1px solid #334155';
+        btn.style.cursor = 'not-allowed';
+        btn.innerHTML = '✓ Classified (+25 XP Claimed)';
+      });
+
+      // 4. Trigger Toast Feedback & Complete Challenge
+      if (typeof showXpGainToast === 'function') {
+        showXpGainToast('+25 XP Earned! ⚡ Waste Classified');
       }
+      if (typeof checkAndCompleteDailyChallenge === 'function') {
+        checkAndCompleteDailyChallenge('c1');
+      }
+
+      // 5. Render the result card
+      resultBox.className = `bin-result-card bin-${data.bin_color || 'blue'}`;
+      resultBox.innerHTML = `
+        <div class="bin-badge">🗑️ ${data.bin_type}</div>
+        <div>
+          <h2 style="font-size: 20px; font-weight: 800; margin: 4px 0;">${data.item_name}</h2>
+          <span style="font-size: 13px; color: var(--text-muted);">
+            Recyclable: <b>${data.recyclable ? '✅ Yes' : '❌ No'}</b>
+          </span>
+        </div>
+        <div class="prep-box">
+          💡 <b>3-Second Prep Tip:</b> ${data.prep_tip}
+        </div>
+        <div style="font-size: 12px; color: var(--accent-emerald); font-weight: 700;">
+          ✨ +25 XP & +1kg Waste Diverted!
+        </div>
+      `;
+
+      if (typeof loadDashboard === 'function') loadDashboard();
+    } else {
+      resultBox.className = 'ai-output';
+      resultBox.innerText = 'Error: ' + (data.error || 'Failed to classify');
+      
+      // Re-enable if error
+      classifyButtons.forEach(btn => {
+        btn.disabled = false;
+        btn.style.background = 'var(--accent-emerald)';
+        btn.style.color = '#000';
+        btn.style.cursor = 'pointer';
+        btn.innerHTML = '⚡ Classify Uploaded Photo (+25 XP)';
+      });
     }
+  } catch (err) {
+    resultBox.className = 'ai-output';
+    resultBox.innerText = 'Error: ' + err.message;
+    
+    classifyButtons.forEach(btn => {
+      btn.disabled = false;
+      btn.style.background = 'var(--accent-emerald)';
+      btn.style.color = '#000';
+      btn.style.cursor = 'pointer';
+      btn.innerHTML = '⚡ Classify Uploaded Photo (+25 XP)';
+    });
+  }
+}
 
     function analyzeWasteFile() {
       const file = document.getElementById('wastePhotoInput').files[0];
@@ -1684,6 +1748,22 @@ window.startCamera = async function(type) {
       reader.readAsDataURL(file);
     }
 
+    // Re-enable classify buttons when a new file is chosen
+document.addEventListener('DOMContentLoaded', () => {
+  const fileInput = document.getElementById('wastePhotoInput');
+  if (fileInput) {
+    fileInput.addEventListener('change', () => {
+      const classifyButtons = document.querySelectorAll('#tab-waste-scanner button, .classify-btn');
+      classifyButtons.forEach(btn => {
+        btn.disabled = false;
+        btn.style.background = 'var(--accent-emerald, #22c55e)';
+        btn.style.color = '#000';
+        btn.style.cursor = 'pointer';
+        btn.innerHTML = '⚡ Classify Uploaded Photo (+25 XP)';
+      });
+    });
+  }
+});
     // --- AI Food Rescue ---
     async function requestRecipe(payload) {
       const resultBox = document.getElementById('foodResult');
