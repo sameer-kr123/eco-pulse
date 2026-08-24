@@ -1907,70 +1907,125 @@ document.addEventListener('DOMContentLoaded', () => {
         loadSavedPins();
 
         map.on('click', (e) => {
-          currentSelectedCoords = e.latlng;
-          if (tempMarker) tempMarker.setLatLng(e.latlng);
-          else tempMarker = L.marker(e.latlng).addTo(map);
-          document.getElementById('reportLocation').value = `GPS Pin: Lat ${e.latlng.lat.toFixed(4)}, Lng ${e.latlng.lng.toFixed(4)}`;
-        });
+    currentSelectedCoords = e.latlng;
+    if (tempMarker) tempMarker.setLatLng(e.latlng);
+    else tempMarker = L.marker(e.latlng).addTo(map);
+    document.getElementById('reportLocation').value = `GPS Pin: Lat ${e.latlng.lat.toFixed(4)}, Lng ${e.latlng.lng.toFixed(4)}`;
+
+    // Re-enable report button for the new pin
+    const reportBtn = document.querySelector('#tab-reports button[onclick*="submitReport"], #submitReportBtn, .report-submit-btn');
+    if (reportBtn && reportBtn.disabled) {
+      reportBtn.disabled = false;
+      reportBtn.style.background = 'var(--accent-emerald, #22c55e)';
+      reportBtn.style.color = '#000';
+      reportBtn.style.border = 'none';
+      reportBtn.style.cursor = 'pointer';
+      reportBtn.innerHTML = '📍 Submit Waste Report (+50 XP)';
+    }
+  });
       } else {
         map.invalidateSize();
       }
     }
 
     async function submitReport() {
-      const loc = document.getElementById('reportLocation').value;
-      const desc = document.getElementById('reportDesc').value;
-      const statusBox = document.getElementById('reportResult');
+  const loc = document.getElementById('reportLocation').value;
+  const desc = document.getElementById('reportDesc').value;
+  const statusBox = document.getElementById('reportResult');
+  const reportBtn = document.querySelector('#tab-reports button[onclick*="submitReport"], #submitReportBtn, .report-submit-btn');
 
-      if (!currentSelectedCoords || !desc) {
-        return alert('Please click on the map to pick a location and enter a description.');
-      }
+  if (!currentSelectedCoords || !desc) {
+    return alert('Please click on the map to pick a location and enter a description.');
+  }
 
-      statusBox.style.display = 'block';
-      statusBox.innerHTML = '📍 <i>Analyzing hotspot & generating official municipal complaint...</i>';
+  // 1. Immediately disable button & turn gray
+  if (reportBtn) {
+    reportBtn.disabled = true;
+    reportBtn.style.background = '#334155';
+    reportBtn.style.color = '#94a3b8';
+    reportBtn.style.cursor = 'not-allowed';
+    reportBtn.innerHTML = '⏳ Pinning Hotspot to Community Map...';
+  }
 
-      try {
-        const res = await fetch('/api/reports', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            lat: currentSelectedCoords.lat,
-            lng: currentSelectedCoords.lng,
-            location: loc,
-            description: desc
-          })
-        });
+  statusBox.style.display = 'block';
+  statusBox.className = 'ai-output';
+  statusBox.innerHTML = '📍 <i>Analyzing hotspot & generating official municipal complaint...</i>';
 
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
+  try {
+    const res = await fetch('/api/reports', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lat: currentSelectedCoords.lat,
+        lng: currentSelectedCoords.lng,
+        location: loc,
+        description: desc
+      })
+    });
 
-        const shareText = encodeURIComponent(`🚨 Civic Sanitation Report:\n${data.complaintDraft}\n📍 Location: https://maps.google.com/?q=${data.lat},${data.lng}\n#SwachhBharat #CleanCity`);
-        const waUrl = `https://api.whatsapp.com/send?text=${shareText}`;
-        const xUrl = `https://twitter.com/intent/tweet?text=${shareText}`;
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
 
-        statusBox.innerHTML = `
-          <div class="report-success-card">
-            <div style="font-size: 13px; color: var(--accent-emerald); font-weight: 800;">
-              ✅ Hotspot Logged on Map (+30 XP)
-            </div>
-            <div style="font-size: 14px;">
-              <b>Severity Tag:</b> <span style="color: var(--accent-amber);">${data.severity}</span>
-            </div>
-            <div style="background: var(--bg-surface); padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.4;">
-              <b>Generated Municipal Draft:</b><br/>
-              "${data.complaintDraft}"
-            </div>
-            <div class="share-btn-group">
-              <a href="${waUrl}" target="_blank" class="btn-whatsapp">📲 Send on WhatsApp</a>
-              <a href="${xUrl}" target="_blank" class="btn-twitter">🐦 Tweet Authorities</a>
-            </div>
-          </div>
-        `;
-        loadDashboard();
-      } catch (err) {
-        statusBox.innerText = 'Error: ' + err.message;
-      }
+    // 2. Award +50 XP & refresh UI
+    addHunterXP(50);
+
+    // 3. Keep button grayed out & mark claimed
+    if (reportBtn) {
+      reportBtn.disabled = true;
+      reportBtn.style.background = '#1e293b';
+      reportBtn.style.color = '#64748b';
+      reportBtn.style.border = '1px solid #334155';
+      reportBtn.style.cursor = 'not-allowed';
+      reportBtn.innerHTML = '✓ Hotspot Reported (+50 XP Claimed)';
     }
+
+    // 4. Show toast notification & complete challenge c3
+    if (typeof showXpGainToast === 'function') {
+      showXpGainToast('+50 XP Earned! 📍 Hotspot Pinned');
+    }
+    if (typeof checkAndCompleteDailyChallenge === 'function') {
+      checkAndCompleteDailyChallenge('c3');
+    }
+
+    const shareText = encodeURIComponent(`🚨 Civic Sanitation Report:\n${data.complaintDraft}\n📍 Location: https://maps.google.com/?q=${currentSelectedCoords.lat},${currentSelectedCoords.lng}`);
+    const waUrl = `https://api.whatsapp.com/send?text=${shareText}`;
+    const xUrl = `https://twitter.com/intent/tweet?text=${shareText}`;
+
+    statusBox.innerHTML = `
+      <div class="report-success-card">
+        <div style="font-size: 13px; color: var(--accent-emerald); font-weight: 800;">
+          ✅ Hotspot Logged on Map (+50 XP)
+        </div>
+        <div style="font-size: 14px; margin-top: 6px;">
+          <b>Severity Tag:</b> <span style="color: var(--accent-amber);">${data.severity || 'Medium'}</span>
+        </div>
+        <div style="background: var(--bg-surface); padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.4; margin: 10px 0;">
+          <b>Generated Municipal Draft:</b><br/>
+          "${data.complaintDraft}"
+        </div>
+        <div class="share-btn-group">
+          <a href="${waUrl}" target="_blank" class="btn-whatsapp">📲 Send on WhatsApp</a>
+          <a href="${xUrl}" target="_blank" class="btn-twitter">🐦 Tweet Authorities</a>
+        </div>
+      </div>
+    `;
+
+    loadSavedPins();
+    if (typeof loadDashboard === 'function') loadDashboard();
+
+  } catch (err) {
+    statusBox.className = 'ai-output';
+    statusBox.innerText = 'Error: ' + err.message;
+
+    if (reportBtn) {
+      reportBtn.disabled = false;
+      reportBtn.style.background = 'var(--accent-emerald, #22c55e)';
+      reportBtn.style.color = '#000';
+      reportBtn.style.cursor = 'pointer';
+      reportBtn.innerHTML = '📍 Submit Waste Report (+50 XP)';
+    }
+  }
+}
 
     // Auto-init on launch
 window.addEventListener('DOMContentLoaded', () => {
