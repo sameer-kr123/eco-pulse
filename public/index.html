@@ -39,16 +39,20 @@
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
-    transform: translateX(-100%) !important; /* Hide completely to the left */
+    transform: translateX(-100%) !important;
     width: 260px !important;
-    height: 100vh !important;
+    
+    /* FIX: Use 100% as fallback, 100dvh for modern mobile browsers */
+    height: 100% !important; 
+    height: 100dvh !important; 
+    
     background: #060d13 !important; 
-    z-index: 9999 !important; /* Ensure it is above the dashboard */
+    z-index: 9999 !important; 
     transition: transform 0.3s ease-in-out !important;
     box-shadow: 5px 0 15px rgba(0, 0, 0, 0.7) !important;
     display: flex !important;
     flex-direction: column !important;
-    padding-top: 70px !important; /* Space for the button */
+    padding-top: 70px !important; 
   }
 
   /* Class added by JS to slide the sidebar in */
@@ -59,7 +63,10 @@
   /* 3. Fix the Profile Button at the bottom so it doesn't overflow */
   .profile-card, .sidebar-footer, .profile-section {
     position: absolute !important;
-    bottom: 20px !important;
+    
+    /* FIX: Increased from 20px to safely clear bottom mobile bezels/bars */
+    bottom: 40px !important; 
+    
     left: 10px !important;
     width: calc(100% - 20px) !important;
     box-sizing: border-box !important;
