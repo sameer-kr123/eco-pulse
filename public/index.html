@@ -351,13 +351,19 @@ body {
     </div>
 
     <!-- User Profile Badge (Click to Open Profile Modal) -->
-    <div class="user-profile-badge" onclick="openProfileModal()">
-      <div class="avatar" id="sidebarAvatar">N</div>
-      <div>
-        <div style="font-size: 14px; font-weight: 700;" id="sidebarName">Nikhil</div>
-        <div style="font-size: 12px; color: var(--text-muted);" id="sidebarRank">Eco Guardian</div>
-      </div>
+    <!-- Bottom-Left Profile / Auth Badge -->
+<div class="user-profile-badge" onclick="handleProfileBadgeClick()" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: var(--bg-card); border-radius: 12px; margin-top: auto;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <div id="userAvatar" class="avatar" style="width: 36px; height: 36px; border-radius: 50%; background: #22c55e; color: #000; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px;">
+      N
     </div>
+    <div>
+      <div id="userNameDisplay" style="font-size: 13px; font-weight: 800; color: #fff;">Nikhil</div>
+      <div id="userRankDisplay" style="font-size: 10px; color: var(--accent-hunter-green); font-weight: 600;">🌱 Eco Rookie</div>
+    </div>
+  </div>
+  <span id="authBadgeStatus" style="font-size: 11px; color: #64748b; font-weight: 700;">Profile ↗</span>
+</div>
   </aside>
 
   <!-- Main View Area -->
@@ -669,41 +675,6 @@ body {
 </div>
   </main>
 
-  <!-- Clean Floating Profile / Sign-in Modal -->
-  <div id="profileModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); z-index: 99999; justify-content: center; align-items: center;">
-    <div style="background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; padding: 24px; width: 90%; max-width: 380px; color: #fff; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6);">
-      
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3 style="margin: 0; font-size: 17px; font-weight: 700;">👤 User Profile</h3>
-        <button onclick="closeProfileModal()" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
-      </div>
-      
-      <div style="text-align: center; margin-bottom: 18px;">
-        <div id="modalAvatar" style="width: 52px; height: 52px; border-radius: 50%; background: #10b981; color: #0f172a; font-size: 22px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto;">N</div>
-        <h4 style="margin: 0; font-size: 16px;" id="modalDisplayName">Nikhil</h4>
-        <span style="font-size: 12px; color: #10b981; font-weight: 600;" id="modalRankLabel">🌱 Eco Guardian</span>
-      </div>
-
-      <div style="margin-bottom: 16px;">
-        <label style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 6px;">Switch User / Change Name:</label>
-        <div style="display: flex; gap: 8px;">
-          <input type="text" id="newUserNameInput" placeholder="Enter new user name..." style="flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.15); background: #1e293b; color: #fff; font-size: 13px; margin: 0;" />
-          <button onclick="saveUserProfile()" class="btn-primary" style="padding: 10px 14px; font-size: 12px; font-weight: 700; width: auto; cursor: pointer; border-radius: 8px; border: none; background: #10b981; color: #0f172a;">Save</button>
-        </div>
-      </div>
-
-      <div style="background: rgba(255, 255, 255, 0.04); border-radius: 10px; padding: 12px; margin-bottom: 16px; font-size: 13px; line-height: 1.6;">
-        <div><b>Account Status:</b> Active</div>
-        <div><b>Total XP:</b> <span id="modalUserXp">350 XP</span></div>
-        <div><b>Daily Streak:</b> <span id="modalStreak">🔥 5 Days</span></div>
-      </div>
-
-      <button onclick="closeProfileModal()" style="width: 100%; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); color: #cbd5e1; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer;">
-        Close
-      </button>
-    </div>
-  </div>
-
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
   <script>
@@ -712,7 +683,52 @@ body {
     let tempMarker = null;
     let currentSelectedCoords = null;
 
-function renderStreakChain(streak) {
+  // Navigate to profile.html if logged in, or signin.html if guest
+function handleProfileBadgeClick() {
+  const token = localStorage.getItem('token');
+  if (token) {
+    window.location.href = '/profile.html';
+  } else {
+    window.location.href = '/signin.html';
+  }
+}
+
+// Sync user state from localStorage on page load
+function syncUserState() {
+  const userStr = localStorage.getItem('user');
+  const token = localStorage.getItem('token');
+
+  const avatarEl = document.getElementById('userAvatar');
+  const nameEl = document.getElementById('userNameDisplay');
+  const rankEl = document.getElementById('userRankDisplay');
+  const badgeStatus = document.getElementById('authBadgeStatus');
+  const welcomeEl = document.getElementById('welcomeUser');
+
+  if (token && userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      const initial = (user.name || 'H').charAt(0).toUpperCase();
+      if (avatarEl) avatarEl.innerText = initial;
+      if (nameEl) nameEl.innerText = user.name || 'Hunter';
+      if (rankEl) rankEl.innerText = user.title || '🌱 Eco Rookie';
+      if (welcomeEl) welcomeEl.innerText = `Hi, ${user.name || 'Hunter'}`;
+      if (badgeStatus) badgeStatus.innerText = 'Profile ↗';
+    } catch (e) {
+      console.error(e);
+    }
+  } else {
+    if (avatarEl) avatarEl.innerText = '?';
+    if (nameEl) nameEl.innerText = 'Sign In';
+    if (rankEl) rankEl.innerText = 'Guest Hunter';
+    if (welcomeEl) welcomeEl.innerText = 'Hi, Hunter';
+    if (badgeStatus) badgeStatus.innerText = 'Login ↗';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  syncUserState();
+});
+    function renderStreakChain(streak) {
   const countEl = document.getElementById('streakCountNumber');
   if (countEl) countEl.innerText = streak || 0;
 
@@ -1180,22 +1196,7 @@ window.startCamera = async function(type) {
   }
   if (originalStartCamera) originalStartCamera(type);
 };
-    // --- Profile Modal Controls ---
-    function openProfileModal() {
-      const modal = document.getElementById('profileModal');
-      if (modal) modal.style.display = 'flex';
-    }
-
-    function closeProfileModal() {
-      const modal = document.getElementById('profileModal');
-      if (modal) modal.style.display = 'none';
-    }
-
-    window.addEventListener('click', (e) => {
-      const modal = document.getElementById('profileModal');
-      if (e.target === modal) closeProfileModal();
-    });
-
+    
     async function saveUserProfile() {
       const nameInput = document.getElementById('newUserNameInput');
       const name = nameInput ? nameInput.value.trim() : '';
