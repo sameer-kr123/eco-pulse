@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { initializeUsersTable, hashPassword, comparePassword, generateToken, authMiddleware } = require('./auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,6 +17,9 @@ app.use(express.static('public'));
 const db = new sqlite3.Database('./data.db');
 
 db.serialize(() => {
+  // Initialize users table for authentication
+  initializeUsersTable(db);
+
   // 1. Profile Table
   db.run(`
     CREATE TABLE IF NOT EXISTS profile (
@@ -68,6 +72,216 @@ db.serialize(() => {
     )
   `);
 });
+
+// ==================== AUTHENTICATION ENDPOINTS ====================
+
+// Sign Up
+app.post('/api/auth/signup', async (req, res) => {
+  try {
+    const { name, city, email, password } = req.body;
+
+    // Validation
+    if (!name || !city || !email || !password) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+
+    // Check if email already exists
+    db.get('SELECT id FROM users WHERE email = ?', [email], async (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      if (row) {
+        return res.status(400).json({ error: 'Email already registered' });
+      }
+
+      try {
+        const hashedPassword = await hashPassword(password);
+
+        db.run(
+          'INSERT INTO users (name, email, city, password) VALUES (?, ?, ?, ?)',
+          [name.trim(), email.trim(), city.trim(), hashedPassword],
+          function (insertErr) {
+            if (insertErr) return res.status(500).json({ error: insertErr.message });
+            
+            const token = generateToken(this.lastID, email, name);
+            res.status(201).json({
+              success: true,
+              message: 'Account created successfully',
+              token,
+              user: {
+                id: this.lastID,
+                name: name.trim(),
+                email: email.trim(),
+                city: city.trim()
+              }
+            });
+          }
+        );
+      } catch (hashErr) {
+        return res.status(500).json({ error: 'Failed to create account' });
+      }
+    });
+  } catch (error) {
+    console.error('Signup Error:', error);
+    res.status(500).json({ error: error.message || 'Signup failed' });
+  }
+});
+
+// Sign In
+app.post('/api/auth/signin', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    db.get('SELECT * FROM users WHERE email = ?', [email.trim()], async (err, user) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      if (!user) {
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
+
+      try {
+        const isPasswordValid = await comparePassword(password, user.password);
+
+        if (!isPasswordValid) {
+          return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
+        const token = generateToken(user.id, user.email, user.name);
+        res.json({
+          success: true,
+          token,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            city: user.city,
+            created_at: user.created_at
+          }
+        });
+      } catch (compareErr) {
+        return res.status(500).json({ error: 'Authentication failed' });
+      }
+    });
+  } catch (error) {
+    console.error('Signin Error:', error);
+    res.status(500).json({ error: error.message || 'Signin failed' });
+  }
+});
+
+// Get User Profile (Protected)
+app.get('/api/auth/profile', authMiddleware, (req, res) => {
+  db.get('SELECT id, name, email, city, created_at, updated_at FROM users WHERE id = ?', 
+    [req.user.userId], 
+    (err, user) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!user) return res.status(404).json({ error: 'User not found' });
+      res.json(user);
+    }
+  );
+});
+
+// Update Profile (Protected)
+app.put('/api/auth/update-profile', authMiddleware, (req, res) => {
+  try {
+    const { name, city, email } = req.body;
+    const userId = req.user.userId;
+
+    if (!name || !city || !email) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    // Check if new email is already taken by another user
+    db.get('SELECT id FROM users WHERE email = ? AND id != ?', 
+      [email.trim(), userId], 
+      (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        if (row) {
+          return res.status(400).json({ error: 'Email already in use' });
+        }
+
+        db.run(
+          'UPDATE users SET name = ?, city = ?, email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [name.trim(), city.trim(), email.trim(), userId],
+          function (updateErr) {
+            if (updateErr) return res.status(500).json({ error: updateErr.message });
+            res.json({
+              success: true,
+              message: 'Profile updated successfully',
+              user: {
+                id: userId,
+                name: name.trim(),
+                email: email.trim(),
+                city: city.trim()
+              }
+            });
+          }
+        );
+      }
+    );
+  } catch (error) {
+    console.error('Update Profile Error:', error);
+    res.status(500).json({ error: error.message || 'Failed to update profile' });
+  }
+});
+
+// Change Password (Protected)
+app.post('/api/auth/change-password', authMiddleware, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.userId;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current and new password are required' });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'New password must be at least 8 characters' });
+    }
+
+    db.get('SELECT password FROM users WHERE id = ?', [userId], async (err, user) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      try {
+        const isCurrentPasswordValid = await comparePassword(currentPassword, user.password);
+
+        if (!isCurrentPasswordValid) {
+          return res.status(401).json({ error: 'Current password is incorrect' });
+        }
+
+        const hashedNewPassword = await hashPassword(newPassword);
+
+        db.run(
+          'UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [hashedNewPassword, userId],
+          function (updateErr) {
+            if (updateErr) return res.status(500).json({ error: updateErr.message });
+            res.json({
+              success: true,
+              message: 'Password changed successfully'
+            });
+          }
+        );
+      } catch (compareErr) {
+        return res.status(500).json({ error: 'Failed to change password' });
+      }
+    });
+  } catch (error) {
+    console.error('Change Password Error:', error);
+    res.status(500).json({ error: error.message || 'Failed to change password' });
+  }
+});
+
+// ==================== EXISTING ENDPOINTS ====================
+
 // Evaluate Streak Status, Expiration, and Multipliers
 function evaluateStreak(profile) {
   if (!profile || !profile.last_active_date) {
@@ -94,6 +308,7 @@ function evaluateStreak(profile) {
 
   return { streak: currentStreak, multiplier, diffDays };
 }
+
 app.get('/api/dashboard', (req, res) => {
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -198,7 +413,7 @@ app.post('/api/reports', async (req, res) => {
     }
 
     let severity = "Moderate Waste";
-    let complaintDraft = `Official Waste Clearance Request:\nLocation: ${location || 'Coordinates ' + lat + ', ' + lng}\nDetails: ${description || 'Illegal garbage accumulation reported.'}\nPlease take prompt action to clear this hotspot.`;
+    let complaintDraft = `Official Waste Clearance Request:\nLocation: ${location || 'Coordinates ' + lat + ', ' + lng}\nDetails: ${description || 'Illegal garbage accumulation reported.'}\nPlease act immediately.`;
 
     // If an image or description is provided, use Gemini to classify and draft an official complaint
     if (imageBase64 || description) {
@@ -262,6 +477,7 @@ Return ONLY valid JSON.`;
     res.status(500).json({ error: error.message || 'Failed to submit report' });
   }
 });
+
 // AI Waste Scanner (Structured 3-Second Bin Output)
 app.post('/api/ai/scan-waste', async (req, res) => {
   try {
@@ -372,6 +588,7 @@ Keep steps ultra-simple and focused on saving food from going to waste. Do not i
     res.status(500).json({ error: error.message || 'Failed to generate recipe' });
   }
 });
+
 // Update / Create Profile
 app.post('/api/profile/update', (req, res) => {
   const { name } = req.body;
@@ -386,6 +603,7 @@ app.post('/api/profile/update', (req, res) => {
     }
   );
 });
+
 // Database seed for community leaderboard if table doesn't exist
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS leaderboard (
@@ -465,6 +683,7 @@ app.post('/api/profile/quest', (req, res) => {
     }
   );
 });
+
 app.listen(PORT, () => {
   console.log(`EcoPulse Server running on port ${PORT}`);
 });
