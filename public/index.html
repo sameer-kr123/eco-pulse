@@ -7,6 +7,72 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 
   <style>
+  /* --- MOBILE SIDEBAR & PROFILE FIX --- */
+
+/* Hide mobile button on desktop */
+.mobile-menu-btn {
+  display: none;
+}
+
+/* Apply changes ONLY to mobile screens (tablets and phones) */
+@media (max-width: 768px) {
+  
+  /* 1. Style and show the Hamburger Button */
+  .mobile-menu-btn {
+    display: block;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1000;
+    background: #0c151e;
+    color: #22c55e;
+    border: 1px solid #22c55e;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  }
+
+  /* 2. Convert Sidebar into a slide-out drawer */
+  .sidebar, aside {
+    position: fixed;
+    top: 0;
+    left: -100%; /* Hide off-screen by default */
+    width: 260px;
+    height: 100vh;
+    background: #060d13; /* Match your dark theme */
+    z-index: 999;
+    transition: transform 0.3s ease-in-out;
+    box-shadow: 5px 0 15px rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    padding-top: 60px; /* Space for the hamburger button */
+  }
+
+  /* Class added by JS to slide the sidebar in */
+  .sidebar.active, aside.active {
+    transform: translateX(0);
+  }
+
+  /* 3. Fix the Profile Button at the bottom so it doesn't overflow */
+  .profile-card, .sidebar-footer, .profile-section {
+    position: absolute;
+    bottom: 20px;
+    left: 10px;
+    right: 10px;
+    width: calc(100% - 20px) !important;
+    box-sizing: border-box;
+    margin: 0 !important;
+  }
+
+  /* 4. Allow main content to take full width on mobile */
+  .main-content, .dashboard, main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding-top: 70px !important; /* Prevent content from hiding behind hamburger */
+  }
+}
   /* Unified Scanner Card */
 .unified-upload-box {
   background: var(--bg-surface);
@@ -336,6 +402,10 @@ body {
 </head>
 <body>
 
+  <!-- Mobile Menu Toggle Button -->
+<button id="mobileMenuBtn" class="mobile-menu-btn">
+  ☰
+</button>
   <!-- Sidebar -->
   <aside class="sidebar">
    <div style="padding: 20px 18px 18px 18px; display: flex; align-items: center; justify-content: flex-start;">
@@ -2033,5 +2103,34 @@ window.addEventListener('DOMContentLoaded', () => {
   loadLeaderboard();
 });
   </script>
+  // --- Mobile Sidebar Toggle Logic ---
+document.addEventListener('DOMContentLoaded', () => {
+  const mobileBtn = document.getElementById('mobileMenuBtn');
+  const sidebar = document.querySelector('.sidebar') || document.querySelector('aside');
+  const navLinks = document.querySelectorAll('.sidebar a, aside a, .nav-item');
+
+  if (mobileBtn && sidebar) {
+    // Open/Close menu when hamburger is clicked
+    mobileBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('active');
+      // Optional: change icon to an X when open
+      if(sidebar.classList.contains('active')) {
+        mobileBtn.innerHTML = '✕';
+      } else {
+        mobileBtn.innerHTML = '☰';
+      }
+    });
+
+    // Auto-close menu when a navigation link is clicked (better mobile UX)
+    navLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          sidebar.classList.remove('active');
+          mobileBtn.innerHTML = '☰';
+        }
+      });
+    });
+  }
+});
 </body>
 </html>
