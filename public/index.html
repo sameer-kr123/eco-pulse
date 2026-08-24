@@ -23,7 +23,7 @@
     position: fixed;
     top: 15px;
     left: 15px;
-    z-index: 1000;
+    z-index: 10000; /* Increased to stay above everything */
     background: #0c151e;
     color: #22c55e;
     border: 1px solid #22c55e;
@@ -36,33 +36,33 @@
 
   /* 2. Convert Sidebar into a slide-out drawer */
   .sidebar, aside {
-    position: fixed;
-    top: 0;
-    left: -100%; /* Hide off-screen by default */
-    width: 260px;
-    height: 100vh;
-    background: #060d13; /* Match your dark theme */
-    z-index: 999;
-    transition: transform 0.3s ease-in-out;
-    box-shadow: 5px 0 15px rgba(0, 0, 0, 0.7);
-    display: flex;
-    flex-direction: column;
-    padding-top: 60px; /* Space for the hamburger button */
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: translateX(-100%) !important; /* Hide completely to the left */
+    width: 260px !important;
+    height: 100vh !important;
+    background: #060d13 !important; 
+    z-index: 9999 !important; /* Ensure it is above the dashboard */
+    transition: transform 0.3s ease-in-out !important;
+    box-shadow: 5px 0 15px rgba(0, 0, 0, 0.7) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding-top: 70px !important; /* Space for the button */
   }
 
   /* Class added by JS to slide the sidebar in */
   .sidebar.active, aside.active {
-    transform: translateX(0);
+    transform: translateX(0) !important; /* Slide back to original position */
   }
 
   /* 3. Fix the Profile Button at the bottom so it doesn't overflow */
   .profile-card, .sidebar-footer, .profile-section {
-    position: absolute;
-    bottom: 20px;
-    left: 10px;
-    right: 10px;
+    position: absolute !important;
+    bottom: 20px !important;
+    left: 10px !important;
     width: calc(100% - 20px) !important;
-    box-sizing: border-box;
+    box-sizing: border-box !important;
     margin: 0 !important;
   }
 
@@ -70,7 +70,7 @@
   .main-content, .dashboard, main {
     margin-left: 0 !important;
     width: 100% !important;
-    padding-top: 70px !important; /* Prevent content from hiding behind hamburger */
+    padding-top: 70px !important; 
   }
 }
   /* Unified Scanner Card */
