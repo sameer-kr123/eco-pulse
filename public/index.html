@@ -760,18 +760,20 @@ function handleProfileBadgeClick() {
   }
 }
 
-// --- Level Progression & XP System ---
+// --- Exact 6-Tier Hunter Ranks Matching Reference Image ---
 const RANKS = [
-  { level: 1, minXp: 0, title: '🌱 Eco Rookie', icon: '🌿' },
-  { level: 5, minXp: 500, title: '🛡️ Waste Scout', icon: '🍃' },
-  { level: 10, minXp: 1500, title: '⚔️ Green Guardian', icon: '🌲' },
-  { level: 15, minXp: 3000, title: '👑 Eco Legend', icon: '🌍' }
+  { level: 1, minXp: 0, title: 'Rookie Hunter', icon: '🍂', fill: '#451a03', stroke: '#92400e' },
+  { level: 5, minXp: 600, title: 'Waste Scout', icon: '🌿', fill: '#064e3b', stroke: '#94a3b8' },
+  { level: 10, minXp: 1800, title: 'Eco Hunter', icon: '🍃', fill: '#14532d', stroke: '#facc15' },
+  { level: 20, minXp: 4500, title: 'Waste Warrior', icon: '⭐', fill: '#0f172a', stroke: '#38bdf8' },
+  { level: 50, minXp: 12000, title: 'Waste Master', icon: '🌟', fill: '#4c1d95', stroke: '#f59e0b' },
+  { level: 100, minXp: 25000, title: 'Planet Legend', icon: '🌍', fill: '#713f12', stroke: '#eab308' }
 ];
 
 let currentUserData = {
   name: 'Sameer Kumar',
-  xp: 450,
-  streak: 3
+  xp: 650,
+  streak: 2
 };
 
 const DAILY_CHALLENGES = [
@@ -784,29 +786,32 @@ const DAILY_CHALLENGES = [
 const GLOBAL_LEADERBOARD_SEED = [
   { rank: 1, name: 'Rahul', level: 24, xp: 12450, avatar: '👨‍🦱', medal: '🥇' },
   { rank: 2, name: 'Priya', level: 22, xp: 11800, avatar: '👩', medal: '🥈' },
-  { rank: 3, name: 'Sameer', level: 20, xp: 10950, avatar: '🧔', medal: '🥉' },
-  { rank: 4, name: 'Ananya', level: 18, xp: 9750, avatar: '👩‍🦰', medal: '4' },
-  { rank: 5, name: 'Arjun', level: 17, xp: 8600, avatar: '🧑', medal: '5' }
+  { rank: 3, name: 'Sameer', level: 10, xp: 1850, avatar: '🧔', medal: '🥉' },
+  { rank: 4, name: 'Ananya', level: 8, xp: 1450, avatar: '👩‍🦰', medal: '4' },
+  { rank: 5, name: 'Arjun', level: 5, xp: 720, avatar: '🧑', medal: '5' }
 ];
 
 function getRankInfo(xp) {
   let current = RANKS[0];
   let next = RANKS[1];
+
   for (let i = 0; i < RANKS.length; i++) {
     if (xp >= RANKS[i].minXp) {
       current = RANKS[i];
-      next = RANKS[i + 1] || { minXp: current.minXp + 2000, level: current.level + 5 };
+      next = RANKS[i + 1] || { minXp: current.minXp + 20000, level: 100 };
     }
   }
-  const calcLevel = Math.max(1, Math.floor(xp / 150) + 1);
+
   const xpInTier = xp - current.minXp;
   const tierRange = Math.max(1, next.minXp - current.minXp);
-  const progressPercent = Math.min(100, Math.max(8, Math.round((xpInTier / tierRange) * 100)));
+  const progressPercent = Math.min(100, Math.max(6, Math.round((xpInTier / tierRange) * 100)));
 
   return {
-    level: calcLevel,
+    level: current.level,
     title: current.title,
     icon: current.icon,
+    fill: current.fill,
+    stroke: current.stroke,
     targetXp: next.minXp,
     progressPercent
   };
@@ -825,6 +830,7 @@ function updateHeroUI() {
   const curXp = document.getElementById('heroCurrentXp');
   const tgtXp = document.getElementById('heroTargetXp');
   const shieldIcon = document.getElementById('heroShieldIcon');
+  const shieldSvgPaths = document.querySelectorAll('#heroShieldBadge svg path');
 
   if (heroName) heroName.innerText = `${user.name || 'EcoHunter'}!`;
   if (heroAvatar) heroAvatar.innerText = (user.name || 'E').charAt(0).toUpperCase();
@@ -834,6 +840,12 @@ function updateHeroUI() {
   if (curXp) curXp.innerText = xp.toLocaleString();
   if (tgtXp) tgtXp.innerText = info.targetXp.toLocaleString();
   if (shieldIcon) shieldIcon.innerText = info.icon;
+
+  // Dynamically style shield colors to tier
+  if (shieldSvgPaths && shieldSvgPaths.length >= 2) {
+    shieldSvgPaths[0].setAttribute('fill', info.stroke);
+    shieldSvgPaths[1].setAttribute('fill', info.fill);
+  }
 }
 
 function renderDailyChallenges() {
