@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #060d13 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -67,13 +67,13 @@
 
         input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #060d13;
         }
 
         button {
             width: 100%;
             padding: 12px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #22c55e 0%, #764ba2 100%);
             color: white;
             border: none;
             border-radius: 5px;
@@ -103,7 +103,7 @@
         }
 
         .login-link a {
-            color: #667eea;
+            color: #22c55e;
             text-decoration: none;
             font-weight: 600;
         }
@@ -129,7 +129,7 @@
         .loader {
             display: none;
             border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
+            border-top: 3px solid #22c55e;
             border-radius: 50%;
             width: 20px;
             height: 20px;
@@ -146,9 +146,10 @@
 </head>
 <body>
     <div class="container">
-        <h1>🌱 Join EcoPulse</h1>
-        <p class="subtitle">Create your account to start your sustainability journey</p>
-
+        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 6px;">
+  <img src="/logo.png" style="width: 28px; height: 28px; border-radius: 6px;" alt="Logo" />
+  <span style="font-size: 22px; font-weight: 900; color: #fff;">Join Waste<span style="color: #22c55e;">Hunter</span></span>
+</div>
         <form id="signupForm">
             <div class="form-group">
                 <label for="name">Full Name</label>
