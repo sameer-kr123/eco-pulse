@@ -338,8 +338,15 @@ body {
 
   <!-- Sidebar -->
   <aside class="sidebar">
-    <div>
-      <div class="brand" onclick="goToDashboard()"><span class="brand-icon">🌱</span> EcoPulse</div>
+   <div style="padding: 20px 16px 22px 16px; display: flex; align-items: center; justify-content: flex-start;">
+  <div onclick="goToDashboard()" style="cursor: pointer; display: flex; align-items: center; width: 100%;">
+    <img 
+      src="/logo.png" 
+      alt="WasteHunter Logo" 
+      style="height: 46px; width: auto; max-width: 100%; object-fit: contain; border-radius: 8px; filter: drop-shadow(0 2px 10px rgba(34, 197, 94, 0.3));" 
+    />
+  </div>
+</div>
       <ul class="nav-links">
         <li class="nav-item active" onclick="switchTab('dashboard', this)">📊 Dashboard</li>
         <li class="nav-item" onclick="switchTab('waste-scanner', this)">♻️ Waste Scanner</li>
@@ -372,17 +379,61 @@ body {
   <!-- ==================== TAB 1: DASHBOARD ==================== -->
   <div id="tab-dashboard" class="tab-view active-view">
     
-    <!-- Header Row -->
-    <div class="header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-      <div>
-        <h1 id="welcomeUser" style="font-size: 28px; font-weight: 900; margin: 0; color: #fff;">Hi, Hunter</h1>
-        <p style="color: var(--accent-hunter-green); font-size: 13px; font-weight: 600; margin: 4px 0 0 0;">
-          Spot waste. Take action. Level up. Save Earth.
-        </p>
+   <!-- Enhanced Level & XP Hero Header (Image 4 Style) -->
+    <div class="user-hero-card" style="display: flex; justify-content: space-between; align-items: center; background: #0c131a; border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 20px; padding: 20px 24px; margin-bottom: 24px;">
+      
+      <div style="flex: 1; max-width: 520px;">
+        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 10px;">
+          <div id="heroAvatar" style="width: 48px; height: 48px; border-radius: 50%; background: #22c55e; border: 2px solid #16a34a; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: #000; box-shadow: 0 0 16px rgba(34, 197, 94, 0.35);">
+            S
+          </div>
+          <div>
+            <div style="font-size: 13px; color: #94a3b8; font-weight: 600;">Hello,</div>
+            <div id="heroUserName" style="font-size: 20px; font-weight: 900; color: #fff; letter-spacing: -0.3px;">EcoHunter!</div>
+          </div>
+        </div>
+
+        <!-- Level & Hunter Rank Title -->
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px;">
+          <span id="heroLevelText" style="font-size: 24px; font-weight: 900; color: #22c55e;">Level 1</span>
+          <span id="heroRankTitle" style="font-size: 15px; font-weight: 700; color: #e2e8f0;">Eco Rookie</span>
+        </div>
+
+        <!-- Green Progression Bar -->
+        <div style="width: 100%; height: 10px; background: #1e293b; border-radius: 999px; overflow: hidden; margin-bottom: 8px;">
+          <div id="heroLevelProgressBar" style="width: 15%; height: 100%; background: linear-gradient(90deg, #10b981, #22c55e); border-radius: 999px; transition: width 0.5s ease;"></div>
+        </div>
+
+        <!-- XP Text -->
+        <div style="font-size: 13px; font-weight: 800; color: #94a3b8;">
+          <span style="color: #22c55e;">XP</span> <span id="heroCurrentXp">0</span> / <span id="heroTargetXp">500</span>
+        </div>
       </div>
-      <div id="streakPill" class="streak-pill" style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 800; color: #f59e0b;">
-        🔥 <span id="streakCount">0</span> Day Streak
+
+      <!-- Shield Badge & Streak Counter -->
+      <div style="display: flex; align-items: center; gap: 20px;">
+        <div id="streakPill" class="streak-pill" style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 800; color: #f59e0b;">
+          🔥 <span id="streakCount">0</span> Day Streak
+        </div>
+        <div id="heroShieldBadge" style="width: 72px; height: 80px; position: relative; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 4px 14px rgba(34, 197, 94, 0.3));">
+          <svg viewBox="0 0 100 115" width="100%" height="100%">
+            <defs>
+              <linearGradient id="shieldGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#facc15" />
+                <stop offset="100%" stop-color="#ca8a04" />
+              </linearGradient>
+              <linearGradient id="shieldGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#14532d" />
+                <stop offset="100%" stop-color="#064e3b" />
+              </linearGradient>
+            </defs>
+            <path d="M50 0 L95 20 V65 C95 95 50 115 50 115 C50 115 5 95 5 65 V20 Z" fill="url(#shieldGold)" />
+            <path d="M50 7 L88 24 V63 C88 88 50 106 50 106 C50 106 12 88 12 63 V24 Z" fill="url(#shieldGreen)" />
+          </svg>
+          <span id="heroShieldIcon" style="position: absolute; font-size: 28px;">🌿</span>
+        </div>
       </div>
+
     </div>
 
     <!-- Quick Hunter Actions Grid -->
@@ -628,49 +679,65 @@ body {
 
   </div>
 </div>
-    <!-- ==================== TAB: DAILY CHALLENGES ==================== -->
-<div id="tab-challenges" class="tab-view">
-  <div class="tool-box-card" style="max-width: 680px; margin: 0 auto; background: linear-gradient(145deg, #111a22, #0d141b); border: 1px solid var(--bg-card-border); border-radius: 20px; padding: 24px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+<!-- Tab: Daily Challenges -->
+<div id="tab-challenges" class="tab-view" style="display: none;">
+  <div style="max-width: 800px; margin: 0 auto; padding-top: 10px;">
+    
+    <!-- Top Banner -->
+    <div style="background: #0c131a; border: 1px solid rgba(255,255,255,0.07); border-radius: 18px; padding: 22px 26px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center;">
       <div>
-        <h3 style="margin: 0; font-size: 20px; font-weight: 900; color: #fff;">🎯 DAILY ECO CHALLENGES</h3>
-        <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-muted);">Complete daily missions to earn massive XP and maintain streaks</p>
+        <h2 style="margin: 0 0 6px 0; font-size: 20px; font-weight: 900; color: #fff;">🎯 DAILY ECO MISSIONS</h2>
+        <p style="margin: 0; font-size: 13px; color: #94a3b8;">Complete missions daily to earn instant Hunter XP, boost your rank, and maintain streaks.</p>
       </div>
-      <span style="font-size: 11px; background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); font-weight: 800; padding: 5px 10px; border-radius: 20px;">+100 XP BOOST</span>
+      <span style="background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.4); color: #c084fc; padding: 7px 16px; border-radius: 999px; font-size: 12px; font-weight: 800;">
+        +250 MAX XP
+      </span>
     </div>
 
-    <!-- Missions container -->
-    <div id="questsListContainer" style="display: flex; flex-direction: column; gap: 12px;">
-      <!-- Populated dynamically by renderQuests() -->
+    <!-- Challenges Dynamic Container -->
+    <div id="dailyChallengesList" style="display: flex; flex-direction: column; gap: 14px;">
+      <!-- Populated via JavaScript -->
     </div>
+
   </div>
 </div>
 
     <!-- TAB 5: DYNAMIC LEADERBOARD -->
-<div id="tab-leaderboard" class="tab-view">
-  <div class="tool-box-card" style="max-width: 720px; margin: 0 auto; background: linear-gradient(145deg, #111a22, #0d141b); border: 1px solid var(--bg-card-border); border-radius: 20px; padding: 24px;">
-    
-    <!-- Header -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <div>
-        <h3 style="margin: 0; font-size: 20px; font-weight: 900; color: #fff; letter-spacing: 0.5px;">🏅 HUNTER LEADERBOARD</h3>
-        <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-muted);">Real-time eco ranking across all active districts</p>
+<!-- Tab: Leaderboard -->
+<div id="tab-leaderboard" class="tab-view" style="display: none;">
+  <div style="max-width: 520px; margin: 0 auto; padding-top: 10px;">
+    <div style="background: #081119; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
+      
+      <!-- Leaderboard Header & Tabs -->
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="margin: 0 0 14px 0; font-size: 22px; font-weight: 900; color: #4ade80; letter-spacing: 0.5px;">LEADERBOARD</h2>
+        
+        <div style="display: inline-flex; background: #0e1a24; padding: 4px; border-radius: 999px; gap: 4px; border: 1px solid rgba(255,255,255,0.06);">
+          <button onclick="setLeaderboardFilter('global')" id="filterGlobalBtn" style="padding: 7px 22px; border-radius: 999px; border: none; font-size: 13px; font-weight: 800; cursor: pointer; background: #22c55e; color: #000;">Global</button>
+          <button onclick="setLeaderboardFilter('city')" id="filterCityBtn" style="padding: 7px 22px; border-radius: 999px; border: none; font-size: 13px; font-weight: 800; cursor: pointer; background: transparent; color: #94a3b8;">City</button>
+          <button onclick="setLeaderboardFilter('friends')" id="filterFriendsBtn" style="padding: 7px 22px; border-radius: 999px; border: none; font-size: 13px; font-weight: 800; cursor: pointer; background: transparent; color: #94a3b8;">Friends</button>
+        </div>
       </div>
-      <span style="font-size: 11px; background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); font-weight: 800; padding: 5px 10px; border-radius: 20px;">LIVE XP</span>
-    </div>
 
-    <!-- Filter Pills (Global / City / Friends) -->
-    <div style="display: flex; gap: 8px; margin-bottom: 20px;">
-      <button class="leaderboard-filter active-filter" style="padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; background: #22c55e; color: #000; border: none;">Global</button>
-      <button class="leaderboard-filter" style="padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; background: #1e293b; color: #94a3b8; border: 1px solid #334155;">City</button>
-      <button class="leaderboard-filter" style="padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; background: #1e293b; color: #94a3b8; border: 1px solid #334155;">Friends</button>
-    </div>
+      <!-- Top Ranks List -->
+      <div id="leaderboardList" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+        <!-- Top Players loaded dynamically -->
+      </div>
 
-    <!-- Leaderboard List Items -->
-    <div id="leaderboardList" style="display: flex; flex-direction: column; gap: 10px;">
-      <!-- Dynamically Injected by loadLeaderboard() -->
-    </div>
+      <!-- User Active Rank Bar (Green Bar Matching Image 5) -->
+      <div id="currentUserLeaderboardCard" style="display: flex; align-items: center; justify-content: space-between; background: #15803d; border-radius: 16px; padding: 14px 18px; color: #fff; margin-top: 14px; box-shadow: 0 6px 20px rgba(22, 163, 74, 0.4);">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <span id="lbUserRank" style="font-size: 18px; font-weight: 900; min-width: 24px;">23</span>
+          <div id="lbUserAvatar" style="width: 44px; height: 44px; border-radius: 50%; background: #facc15; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; color: #000; font-weight: 900; font-size: 16px;">S</div>
+          <div>
+            <div style="font-size: 15px; font-weight: 800;"><span id="lbUserName">You</span> <span style="font-size: 12px; opacity: 0.85;">(EcoHunter)</span></div>
+            <div id="lbUserLevel" style="font-size: 12px; font-weight: 600; opacity: 0.9;">Level 1</div>
+          </div>
+        </div>
+        <div id="lbUserXp" style="font-size: 15px; font-weight: 900;">0 XP</div>
+      </div>
 
+    </div>
   </div>
 </div>
   </main>
@@ -693,6 +760,224 @@ function handleProfileBadgeClick() {
   }
 }
 
+// --- Level Progression & XP System ---
+const RANKS = [
+  { level: 1, minXp: 0, title: '🌱 Eco Rookie', icon: '🌿' },
+  { level: 5, minXp: 500, title: '🛡️ Waste Scout', icon: '🍃' },
+  { level: 10, minXp: 1500, title: '⚔️ Green Guardian', icon: '🌲' },
+  { level: 15, minXp: 3000, title: '👑 Eco Legend', icon: '🌍' }
+];
+
+let currentUserData = {
+  name: 'Sameer Kumar',
+  xp: 450,
+  streak: 3
+};
+
+const DAILY_CHALLENGES = [
+  { id: 'c1', title: '📷 AI Scan 1 Plastic Item', desc: 'Use AI Waste Scanner to classify 1 recyclable item', xp: 50, claimed: false, icon: '♻️' },
+  { id: 'c2', title: '🍎 Log 1 Food Rescue Item', desc: 'Prevent spoilage by logging pantry food', xp: 40, claimed: false, icon: '🥗' },
+  { id: 'c3', title: '📍 Report 1 Dump Hotspot', desc: 'Pin and report a local waste hotspot on map', xp: 80, claimed: false, icon: '📍' },
+  { id: 'c4', title: '🔥 Check In Daily Streak', desc: 'Visit and check into WasteHunter daily', xp: 50, claimed: false, icon: '🔥' }
+];
+
+const GLOBAL_LEADERBOARD_SEED = [
+  { rank: 1, name: 'Rahul', level: 24, xp: 12450, avatar: '👨‍🦱', medal: '🥇' },
+  { rank: 2, name: 'Priya', level: 22, xp: 11800, avatar: '👩', medal: '🥈' },
+  { rank: 3, name: 'Sameer', level: 20, xp: 10950, avatar: '🧔', medal: '🥉' },
+  { rank: 4, name: 'Ananya', level: 18, xp: 9750, avatar: '👩‍🦰', medal: '4' },
+  { rank: 5, name: 'Arjun', level: 17, xp: 8600, avatar: '🧑', medal: '5' }
+];
+
+function getRankInfo(xp) {
+  let current = RANKS[0];
+  let next = RANKS[1];
+  for (let i = 0; i < RANKS.length; i++) {
+    if (xp >= RANKS[i].minXp) {
+      current = RANKS[i];
+      next = RANKS[i + 1] || { minXp: current.minXp + 2000, level: current.level + 5 };
+    }
+  }
+  const calcLevel = Math.max(1, Math.floor(xp / 150) + 1);
+  const xpInTier = xp - current.minXp;
+  const tierRange = Math.max(1, next.minXp - current.minXp);
+  const progressPercent = Math.min(100, Math.max(8, Math.round((xpInTier / tierRange) * 100)));
+
+  return {
+    level: calcLevel,
+    title: current.title,
+    icon: current.icon,
+    targetXp: next.minXp,
+    progressPercent
+  };
+}
+
+function updateHeroUI() {
+  const user = JSON.parse(localStorage.getItem('user')) || currentUserData;
+  const xp = user.xp || 0;
+  const info = getRankInfo(xp);
+
+  const heroName = document.getElementById('heroUserName');
+  const heroAvatar = document.getElementById('heroAvatar');
+  const heroLvl = document.getElementById('heroLevelText');
+  const heroRank = document.getElementById('heroRankTitle');
+  const heroBar = document.getElementById('heroLevelProgressBar');
+  const curXp = document.getElementById('heroCurrentXp');
+  const tgtXp = document.getElementById('heroTargetXp');
+  const shieldIcon = document.getElementById('heroShieldIcon');
+
+  if (heroName) heroName.innerText = `${user.name || 'EcoHunter'}!`;
+  if (heroAvatar) heroAvatar.innerText = (user.name || 'E').charAt(0).toUpperCase();
+  if (heroLvl) heroLvl.innerText = `Level ${info.level}`;
+  if (heroRank) heroRank.innerText = info.title;
+  if (heroBar) heroBar.style.width = `${info.progressPercent}%`;
+  if (curXp) curXp.innerText = xp.toLocaleString();
+  if (tgtXp) tgtXp.innerText = info.targetXp.toLocaleString();
+  if (shieldIcon) shieldIcon.innerText = info.icon;
+}
+
+function renderDailyChallenges() {
+  const container = document.getElementById('dailyChallengesList');
+  if (!container) return;
+
+  const saved = localStorage.getItem('daily_challenges');
+  const challenges = saved ? JSON.parse(saved) : DAILY_CHALLENGES;
+
+  container.innerHTML = challenges.map((c, i) => `
+    <div style="display: flex; align-items: center; justify-content: space-between; background: #0c131a; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 18px 22px;">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="font-size: 28px; width: 48px; height: 48px; border-radius: 12px; background: #16202c; display: flex; align-items: center; justify-content: center;">
+          ${c.icon}
+        </div>
+        <div>
+          <div style="font-size: 15px; font-weight: 800; color: #fff;">${c.title}</div>
+          <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">${c.desc}</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 13px; font-weight: 800; color: #a855f7;">+${c.xp} XP</span>
+        <button onclick="claimChallenge(${i})" ${c.claimed ? 'disabled' : ''} style="padding: 9px 18px; border-radius: 10px; font-weight: 800; font-size: 12px; cursor: ${c.claimed ? 'default' : 'pointer'}; border: none; background: ${c.claimed ? '#1e293b' : '#22c55e'}; color: ${c.claimed ? '#64748b' : '#000'};">
+          ${c.claimed ? 'Claimed ✓' : 'Claim Reward'}
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function claimChallenge(index) {
+  let saved = localStorage.getItem('daily_challenges');
+  let challenges = saved ? JSON.parse(saved) : DAILY_CHALLENGES;
+  if (challenges[index].claimed) return;
+
+  challenges[index].claimed = true;
+  localStorage.setItem('daily_challenges', JSON.stringify(challenges));
+
+  addHunterXP(challenges[index].xp);
+  renderDailyChallenges();
+}
+
+function addHunterXP(points) {
+  let user = JSON.parse(localStorage.getItem('user')) || currentUserData;
+  user.xp = (user.xp || 0) + points;
+  localStorage.setItem('user', JSON.stringify(user));
+  currentUserData = user;
+
+  updateHeroUI();
+  renderLeaderboard();
+}
+
+function renderLeaderboard(filter = 'global') {
+  const container = document.getElementById('leaderboardList');
+  if (!container) return;
+
+  const user = JSON.parse(localStorage.getItem('user')) || currentUserData;
+  const userXp = user.xp || 0;
+  const userLevel = Math.max(1, Math.floor(userXp / 150) + 1);
+
+  let players = [...GLOBAL_LEADERBOARD_SEED];
+  if (filter === 'city') {
+    players = [
+      { rank: 1, name: 'Priya', level: 22, xp: 11800, avatar: '👩', medal: '🥇' },
+      { rank: 2, name: 'Arjun', level: 17, xp: 8600, avatar: '🧑', medal: '🥈' }
+    ];
+  } else if (filter === 'friends') {
+    players = [
+      { rank: 1, name: 'Rahul', level: 24, xp: 12450, avatar: '👨‍🦱', medal: '🥇' },
+      { rank: 2, name: 'Sameer', level: userLevel, xp: userXp, avatar: '🧔', medal: '🥈' }
+    ];
+  }
+
+  container.innerHTML = players.map(p => {
+    const isMedal = ['🥇', '🥈', '🥉'].includes(p.medal);
+    const badgeStyle = isMedal
+      ? 'font-size: 20px;'
+      : 'font-size: 13px; font-weight: 800; color: #94a3b8; width: 22px; text-align: center;';
+
+    return `
+      <div style="display: flex; align-items: center; justify-content: space-between; background: #0c151e; border: 1px solid rgba(255,255,255,0.05); border-radius: 14px; padding: 12px 18px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <span style="${badgeStyle}">${p.medal}</span>
+          <div style="width: 38px; height: 38px; border-radius: 50%; background: #1e293b; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+            ${p.avatar}
+          </div>
+          <div>
+            <div style="font-size: 14px; font-weight: 800; color: #fff;">${p.name}</div>
+            <div style="font-size: 11px; color: #94a3b8; font-weight: 600;">Level ${p.level}</div>
+          </div>
+        </div>
+        <div style="font-size: 14px; font-weight: 800; color: #e2e8f0;">${p.xp.toLocaleString()} XP</div>
+      </div>
+    `;
+  }).join('');
+
+  const lbRank = document.getElementById('lbUserRank');
+  const lbName = document.getElementById('lbUserName');
+  const lbLvl = document.getElementById('lbUserLevel');
+  const lbXp = document.getElementById('lbUserXp');
+  const lbAvatar = document.getElementById('lbUserAvatar');
+
+  if (lbRank) lbRank.innerText = userXp > 10000 ? '3' : '23';
+  if (lbName) lbName.innerText = user.name || 'You';
+  if (lbLvl) lbLvl.innerText = `Level ${userLevel}`;
+  if (lbXp) lbXp.innerText = `${userXp.toLocaleString()} XP`;
+  if (lbAvatar) lbAvatar.innerText = (user.name || 'Y').charAt(0).toUpperCase();
+}
+
+function setLeaderboardFilter(type) {
+  const globalBtn = document.getElementById('filterGlobalBtn');
+  const cityBtn = document.getElementById('filterCityBtn');
+  const friendsBtn = document.getElementById('filterFriendsBtn');
+
+  [globalBtn, cityBtn, friendsBtn].forEach(b => {
+    if (b) {
+      b.style.background = 'transparent';
+      b.style.color = '#94a3b8';
+    }
+  });
+
+  const activeBtn = type === 'global' ? globalBtn : type === 'city' ? cityBtn : friendsBtn;
+  if (activeBtn) {
+    activeBtn.style.background = '#22c55e';
+    activeBtn.style.color = '#000';
+  }
+
+  renderLeaderboard(type);
+}
+
+// Ensure switchTab triggers re-renders
+const origSwitchTab = window.switchTab;
+window.switchTab = function(tabName, el) {
+  if (origSwitchTab) origSwitchTab(tabName, el);
+  if (tabName === 'challenges') renderDailyChallenges();
+  if (tabName === 'leaderboard') renderLeaderboard('global');
+  if (tabName === 'dashboard') updateHeroUI();
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateHeroUI();
+  renderDailyChallenges();
+  renderLeaderboard('global');
+});
 // Sync user state from localStorage on page load
 function syncUserState() {
   const userStr = localStorage.getItem('user');
