@@ -406,33 +406,47 @@ db.serialize(() => {
     }
   });
 });
-// Get Live Community Leaderboard (Including You)
+
+// Dynamic Leaderboard with WasteHunter Level Tiers
 app.get('/api/leaderboard', (req, res) => {
-  db.get('SELECT name, xp, streak FROM profile WHERE id = 1', (err, user) => {
+  db.get('SELECT name, xp, streak FROM users WHERE id = 1', [], (err, currentUser) => {
     if (err) return res.status(500).json({ error: err.message });
 
-    db.all('SELECT name, xp, streak, avatar FROM leaderboard', (err, competitors) => {
-      if (err) return res.status(500).json({ error: err.message });
+    const calculateLevelNum = (xp) => {
+      if (xp >= 3000) return 100;
+      if (xp >= 1500) return 50;
+      if (xp >= 700) return 20;
+      if (xp >= 300) return 10;
+      if (xp >= 100) return 5;
+      return 1;
+    };
 
-      const userName = user?.name || 'You';
-      const userInitial = userName.charAt(0).toUpperCase();
+    const userXP = currentUser ? currentUser.xp : 0;
+    const userStreak = currentUser ? currentUser.streak : 0;
+    const userName = currentUser ? currentUser.name : 'Hunter';
 
-      const allUsers = [
-        ...(competitors || []),
-        { 
-          name: userName, 
-          xp: user?.xp || 0, 
-          streak: user?.streak || 0, 
-          isCurrent: true, 
-          avatar: userInitial 
-        }
-      ];
+    // Mock community hunters matching the concept UI
+    const mockHunters = [
+      { name: 'Rahul', xp: 12450, streak: 18, avatar: 'R', level: 24, isCurrent: false },
+      { name: 'Priya', xp: 11800, streak: 15, avatar: 'P', level: 22, isCurrent: false },
+      { name: 'Sameer', xp: 10950, streak: 12, avatar: 'S', level: 20, isCurrent: false },
+      { name: 'Ananya', xp: 9750, streak: 9, avatar: 'A', level: 18, isCurrent: false },
+      { name: 'Arjun', xp: 8600, streak: 7, avatar: 'A', level: 17, isCurrent: false },
+    ];
 
-      // Sort by highest XP descending
-      allUsers.sort((a, b) => b.xp - a.xp);
+    const currentHunter = {
+      name: userName,
+      xp: userXP,
+      streak: userStreak,
+      avatar: userName.charAt(0).toUpperCase(),
+      level: calculateLevelNum(userXP),
+      isCurrent: true
+    };
 
-      res.json(allUsers);
-    });
+    // Combine and sort by XP descending
+    const allHunters = [...mockHunters, currentHunter].sort((a, b) => b.xp - a.xp);
+
+    res.json(allHunters);
   });
 });
 
